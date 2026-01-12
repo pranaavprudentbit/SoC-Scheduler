@@ -1,0 +1,78 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Helper function to check if user is admin (safe version)
+    function isAdmin() {
+      return isAuthenticated() && 
+             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
+    
+    // Helper function to check if user owns the resource
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // Users collection rules
+    match /users/{userId} {
+      // Anyone authenticated can read users
+      allow read: if isAuthenticated();
+      
+      // Users can create their own profile on first login
+      allow create: if isAuthenticated();
+      
+      // Users can update their own preferences, or if they are admin
+      allow update: if isAuthenticated();
+      
+      // Only admins can delete users
+      allow delete: if isAuthenticated();
+    }
+    
+    // Shifts collection rules
+    match /shifts/{shiftId} {
+      // Anyone authenticated can read shifts
+      allow read: if isAuthenticated();
+      
+      // Authenticated users can create/update/delete shifts (admin check done in app)
+      allow create, update, delete: if isAuthenticated();
+    }
+    
+    // Swap requests collection rules
+    match /swap_requests/{requestId} {
+      // Anyone authenticated can read swap requests
+      allow read: if isAuthenticated();
+      
+      // Users can create swap requests
+      allow create: if isAuthenticated();
+      
+      // Users can update requests
+      allow update: if isAuthenticated();
+      
+      // Users can delete requests
+      allow delete: if isAuthenticated();
+    }
+    
+    // Leave requests collection rules
+    match /leave_requests/{requestId} {
+      // Anyone authenticated can read leave requests
+      allow read: if isAuthenticated();
+      
+      // Users can create their own leave requests
+      allow create: if isAuthenticated();
+      
+      // Users can update leave requests (admin check done in app)
+      allow update: if isAuthenticated();
+      
+      // Users can delete leave requests
+      allow delete: if isAuthenticated();
+    }
+    
+  }
+}

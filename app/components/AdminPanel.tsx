@@ -1,14 +1,13 @@
 'use client';
 
 import React, { useState } from 'react';
-import { User, Shift, ShiftType, LeaveRequest } from '@/lib/types';
+import { User, Shift, LeaveRequest } from '@/lib/types';
 import { AlertTriangle, BrainCircuit, Users, CalendarDays, FileText, BarChart3, Settings } from 'lucide-react';
 import { UserManagement } from './UserManagement';
 import { AdminCalendarShiftManager } from './AdminCalendarShiftManager';
 import { AdminLeaveManagement } from './AdminLeaveManagement';
 import { AnalyticsDashboard } from './AnalyticsDashboard';
 import { BulkOperations } from './BulkOperations';
-import { ShiftConfigPanel } from './ShiftConfigPanel';
 import { ShiftConfigPanel } from './ShiftConfigPanel';
 
 interface AdminPanelProps {

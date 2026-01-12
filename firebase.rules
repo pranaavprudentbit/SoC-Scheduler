@@ -8,30 +8,21 @@ service cloud.firestore {
       return request.auth != null;
     }
     
-    // Helper function to check if user is admin (safe version)
-    function isAdmin() {
-      return isAuthenticated() && 
-             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
-    }
-    
-    // Helper function to check if user owns the resource
-    function isOwner(userId) {
-      return isAuthenticated() && request.auth.uid == userId;
-    }
+    // Allow all authenticated users to read/write/delete all collections
+    // Authorization checks are done in the application layer
     
     // Users collection rules
     match /users/{userId} {
-      // Anyone authenticated can read users
+      // Anyone authenticated can read all users
       allow read: if isAuthenticated();
       
-      // Users can create their own profile on first login
+      // Users can create their own profile, or admins can create for others
       allow create: if isAuthenticated();
       
-      // Users can update their own preferences, or if they are admin
+      // Users can update any user record (app layer validates authorization)
       allow update: if isAuthenticated();
       
-      // Only admins can delete users
+      // Users can delete (app layer validates authorization)
       allow delete: if isAuthenticated();
     }
     
@@ -40,7 +31,7 @@ service cloud.firestore {
       // Anyone authenticated can read shifts
       allow read: if isAuthenticated();
       
-      // Authenticated users can create/update/delete shifts (admin check done in app)
+      // Authenticated users can create/update/delete shifts
       allow create, update, delete: if isAuthenticated();
     }
     
@@ -52,10 +43,10 @@ service cloud.firestore {
       // Users can create swap requests
       allow create: if isAuthenticated();
       
-      // Users can update requests
+      // Users can update swap requests
       allow update: if isAuthenticated();
       
-      // Users can delete requests
+      // Users can delete swap requests
       allow delete: if isAuthenticated();
     }
     
@@ -64,13 +55,29 @@ service cloud.firestore {
       // Anyone authenticated can read leave requests
       allow read: if isAuthenticated();
       
-      // Users can create their own leave requests
+      // Users can create leave requests
       allow create: if isAuthenticated();
       
-      // Users can update leave requests (admin check done in app)
+      // Users can update leave requests
       allow update: if isAuthenticated();
       
       // Users can delete leave requests
+      allow delete: if isAuthenticated();
+    }
+    
+    // User availability collection rules
+    match /user_availability/{docId} {
+      // Anyone authenticated can read
+      allow read: if isAuthenticated();
+      
+      // Authenticated users can create/update/delete
+      allow create, update, delete: if isAuthenticated();
+    }
+    
+    // Catch-all for any other collections
+    match /{document=**} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
       allow delete: if isAuthenticated();
     }
     

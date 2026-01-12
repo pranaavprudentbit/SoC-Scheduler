@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { User, Shift, SwapRequest, ShiftType } from '@/lib/types';
-import { ArrowLeftRight, Check, X, ArrowRight, Calendar, Clock, User as UserIcon, Sun, Sunset, Moon, RefreshCw } from 'lucide-react';
+import { ArrowLeftRight, Check, X, Calendar, Clock, User as UserIcon, Sun, Sunset, Moon, RefreshCw } from 'lucide-react';
 import { db } from '@/lib/firebase/config';
 import { collection, addDoc, updateDoc, doc } from 'firebase/firestore';
 

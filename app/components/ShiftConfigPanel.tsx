@@ -5,7 +5,6 @@ import { Clock, Save, RotateCcw, AlertCircle } from 'lucide-react';
 import { db } from '@/lib/firebase/config';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { ShiftConfiguration, DEFAULT_SHIFT_CONFIG, ShiftTiming } from '@/lib/shiftConfig';
-import { ShiftType } from '@/lib/types';
 
 export const ShiftConfigPanel: React.FC = () => {
   const [config, setConfig] = useState<ShiftConfiguration>(DEFAULT_SHIFT_CONFIG);

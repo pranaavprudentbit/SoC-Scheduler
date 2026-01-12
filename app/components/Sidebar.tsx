@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { LayoutDashboard, Calendar, Users, Settings, RefreshCw, ShieldCheck, LogOut, FileText, Menu, X } from 'lucide-react';
-import { User, Role } from '@/lib/types';
+import { LayoutDashboard, Calendar, Users, Settings, RefreshCw, ShieldCheck, LogOut, FileText, Menu, X, TrendingUp, CheckCircle2, MessageSquare, Clock, Zap, Download } from 'lucide-react';
+import { User } from '@/lib/types';
 import { auth } from '@/lib/firebase/config';
 import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
@@ -19,8 +19,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   currentUser, 
   activeTab, 
   setActiveTab, 
-  users, 
-  setCurrentUser
+  users: _users, 
+  setCurrentUser: _setCurrentUser
 }) => {
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -41,6 +41,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const navItems = [
     { id: 'dashboard', icon: LayoutDashboard, label: 'Overview' },
     { id: 'calendar', icon: Calendar, label: 'Schedule' },
+    { id: 'clock', icon: Clock, label: 'Clock' },
+    { id: 'history', icon: TrendingUp, label: 'History' },
+    { id: 'performance', icon: CheckCircle2, label: 'Performance' },
+    { id: 'notes', icon: MessageSquare, label: 'Notes' },
+    { id: 'availability', icon: Calendar, label: 'Availability' },
+    { id: 'coverage', icon: Zap, label: 'Coverage' },
+    { id: 'recommendations', icon: TrendingUp, label: 'Suggestions' },
     { id: 'swaps', icon: RefreshCw, label: 'Swaps' },
     { id: 'leaves', icon: FileText, label: 'Leaves' },
     { id: 'preferences', icon: Settings, label: 'Settings' },

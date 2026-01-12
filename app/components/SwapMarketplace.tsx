@@ -2,9 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { User, Shift, SwapRequest, ShiftType } from '@/lib/types';
-import { RefreshCw, Plus, X, Check, Calendar, Clock, User as UserIcon, MessageSquare } from 'lucide-react';
+import { RefreshCw, Plus, X, Check, Calendar, Clock, MessageSquare } from 'lucide-react';
 import { db } from '@/lib/firebase/config';
-import { collection, addDoc, updateDoc, doc, getDocs, query, where, deleteDoc } from 'firebase/firestore';
+import { collection, addDoc, updateDoc, doc, getDocs, deleteDoc } from 'firebase/firestore';
 
 interface SwapMarketplaceProps {
   currentUser: User;

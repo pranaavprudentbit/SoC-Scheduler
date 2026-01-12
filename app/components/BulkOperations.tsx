@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import { User, Shift, ShiftType } from '@/lib/types';
-import { Copy, Trash2, RefreshCw, Users as UsersIcon, Calendar } from 'lucide-react';
+import { User, Shift } from '@/lib/types';
+import { Copy, Trash2, RefreshCw } from 'lucide-react';
 import { db } from '@/lib/firebase/config';
-import { collection, addDoc, deleteDoc, doc, getDocs, query, where, updateDoc } from 'firebase/firestore';
+import { collection, addDoc, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 
 interface BulkOperationsProps {
   users: User[];

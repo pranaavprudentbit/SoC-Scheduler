@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Sidebar } from './components/Sidebar';
 import { CalendarView } from './components/CalendarView';
@@ -9,6 +9,13 @@ import { AdminPanel } from './components/AdminPanel';
 import { SwapMarketplace } from './components/SwapMarketplace';
 import { PreferencesPanel } from './components/PreferencesPanel';
 import { LeaveRequestPanel } from './components/LeaveRequestPanel';
+import { ShiftHistory } from './components/ShiftHistory';
+import { PerformanceDashboard } from './components/PerformanceDashboard';
+import { ShiftNotes } from './components/ShiftNotes';
+import { BulkAvailability } from './components/BulkAvailability';
+import { ClockInOut } from './components/ClockInOut';
+import { TeamCoverageHeatmap } from './components/TeamCoverageHeatmap';
+import { ShiftRecommendations } from './components/ShiftRecommendations';
 import { User, Role, Shift, SwapRequest, LeaveRequest, ShiftType } from '@/lib/types';
 import { auth, db } from '@/lib/firebase/config';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -263,6 +270,21 @@ export default function Home() {
         );
       case 'calendar':
         return <div className="animate-in fade-in duration-300"><MonthCalendarView shifts={shifts} users={users} /></div>;
+      case 'clock':
+        const nextShift = shifts.find(s => s.userId === currentUser.id && s.date >= new Date().toISOString().split('T')[0]);
+        return <div className="animate-in fade-in duration-300"><ClockInOut shifts={shifts} currentUser={currentUser} upcomingShift={nextShift} /></div>;
+      case 'history':
+        return <div className="animate-in fade-in duration-300"><ShiftHistory shifts={shifts} currentUser={currentUser} /></div>;
+      case 'performance':
+        return <div className="animate-in fade-in duration-300"><PerformanceDashboard currentUser={currentUser} shifts={shifts} swaps={swaps} users={users} /></div>;
+      case 'notes':
+        return <div className="animate-in fade-in duration-300"><ShiftNotes shifts={shifts} currentUser={currentUser} users={users} /></div>;
+      case 'availability':
+        return <div className="animate-in fade-in duration-300"><BulkAvailability currentUser={currentUser} onRefresh={refreshData} /></div>;
+      case 'coverage':
+        return <div className="animate-in fade-in duration-300"><TeamCoverageHeatmap shifts={shifts} /></div>;
+      case 'recommendations':
+        return <div className="animate-in fade-in duration-300"><ShiftRecommendations shifts={shifts} currentUser={currentUser} /></div>;
       case 'admin':
         if (!currentUser.isAdmin) return <div className="text-red-500 mt-10 text-center"><p className="text-xl font-semibold">Access Denied</p><p className="text-sm text-zinc-500 mt-2">Admin privileges required</p></div>;
         return <div className="animate-in fade-in duration-300"><AdminPanel users={users} shifts={shifts} leaveRequests={leaveRequests} currentUser={currentUser} setShifts={setShifts} onRefresh={refreshData} /></div>;

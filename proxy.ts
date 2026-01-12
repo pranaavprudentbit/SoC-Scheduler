@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 
-export default async function proxy(request: NextRequest) {
+export default async function proxy(_request: NextRequest) {
   // Firebase handles auth on client side, just pass through
   return NextResponse.next();
 }

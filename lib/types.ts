@@ -79,3 +79,75 @@ export interface TeamStats {
   nightShiftDistribution: Record<string, number>; // userId -> count
   coverageIssues: number;
 }
+
+// Shift Notes & Handover
+export interface ShiftNote {
+  id: string;
+  shiftId: string;
+  userId: string; // Who wrote the note
+  content: string;
+  isAdmin?: boolean; // Admin broadcast notes
+  createdAt: string;
+}
+
+// Availability Management
+export interface UserAvailability {
+  id?: string;
+  userId: string;
+  date: string; // ISO date
+  available: boolean;
+  reason?: string; // "Vacation", "Sick", etc.
+  weekUnavailable?: boolean; // Mark entire week unavailable
+}
+
+// Performance Metrics
+export interface PerformanceMetrics {
+  userId: string;
+  shiftsCompleted: number;
+  totalHours: number;
+  cancellations: number;
+  swapsAccepted: number;
+  swapsOffered: number;
+  reliabilityScore: number; // 0-100
+  lastUpdated: string;
+}
+
+// Clock In/Out Tracking
+export interface ClockEntry {
+  id: string;
+  shiftId: string;
+  userId: string;
+  clockInTime: string; // ISO timestamp
+  clockOutTime?: string; // ISO timestamp
+  actualHours?: number;
+  notes?: string;
+  createdAt: string;
+}
+
+// Team Coverage Status
+export interface CoverageStatus {
+  date: string;
+  shiftType: ShiftType;
+  assignedCount: number;
+  requiredCount: number; // Should be 1 per shift type
+  status: 'UNDERSTAFFED' | 'OK' | 'OVERSTAFFED';
+}
+
+// User Badges & Achievements
+export interface Badge {
+  id: string;
+  name: string; // "Perfect Attendance", "Swap Master"
+  description: string;
+  icon: string; // emoji or icon name
+  earnedDate: string;
+}
+
+// Shift Recommendations
+export interface ShiftRecommendation {
+  shiftId: string;
+  date: string;
+  type: ShiftType;
+  matchScore: number; // 0-100 based on preferences + team need
+  reason: string;
+  urgency: 'LOW' | 'MEDIUM' | 'HIGH'; // How much team needs it
+}

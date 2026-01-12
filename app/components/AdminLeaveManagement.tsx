@@ -24,7 +24,7 @@ export const AdminLeaveManagement: React.FC<AdminLeaveManagementProps> = ({
       const request = leaveRequests.find(lr => lr.id === requestId);
       if (!request) return;
 
-      const requestUser = getUserById(request.userId);
+      // User is derived later for display; no need to fetch here
       
       const requestRef = doc(db, 'leave_requests', requestId);
       await updateDoc(requestRef, {

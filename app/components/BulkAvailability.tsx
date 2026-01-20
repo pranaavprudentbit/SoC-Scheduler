@@ -148,149 +148,148 @@ export const BulkAvailability: React.FC<BulkAvailabilityProps> = ({ currentUser,
   }, [unavailableDates]);
 
   return (
-    <div className="space-y-8">
-      {/* Premium Status Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-gradient-to-br from-indigo-50 to-white border border-indigo-100 rounded-[2rem] p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em]">This Week</span>
-            <div className="p-2 bg-indigo-100 rounded-lg">
-              <Calendar className="text-indigo-600" size={16} />
+    <div className="space-y-6 sm:space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500 pb-12">
+      {/* Strategic Availability Metrices */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+        {[
+          { label: 'Current Cycle', value: quickAvailability.daysBlocked, sub: 'Days Restricted', icon: Calendar, color: 'text-indigo-600', bg: 'bg-indigo-50 border-indigo-100' },
+          { label: 'Upcoming Path', value: nextWeekUnavailable(), sub: 'Projected Blocks', icon: Calendar, color: 'text-blue-600', bg: 'bg-blue-50 border-blue-100' },
+          { label: 'Full Log', value: unavailableDates.length, sub: 'Total Record Count', icon: AlertCircle, color: 'text-amber-600', bg: 'bg-amber-50 border-amber-100' }
+        ].map((item, idx) => (
+          <div key={idx} className={`bg-white border rounded-[2.5rem] p-6 shadow-sm transition-all hover:shadow-md ${item.bg}`}>
+            <div className="flex items-center justify-between mb-4">
+              <span className={`text-[10px] font-black uppercase tracking-[0.3em] ${item.color}`}>{item.label}</span>
+              <div className={`p-2 rounded-xl bg-white shadow-sm ${item.color}`}>
+                <item.icon size={16} strokeWidth={3} />
+              </div>
             </div>
+            <div className="text-4xl font-black text-zinc-900 tracking-tighter tabular-nums">{item.value}</div>
+            <div className="text-[10px] font-bold text-zinc-400 mt-2 uppercase tracking-tighter">{item.sub}</div>
           </div>
-          <div className="text-3xl font-black text-zinc-900 tracking-tight">{quickAvailability.daysBlocked}</div>
-          <div className="text-xs font-bold text-zinc-500 mt-1 uppercase tracking-wider">Days Blocked</div>
-        </div>
-
-        <div className="bg-gradient-to-br from-blue-50 to-white border border-blue-100 rounded-[2rem] p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em]">Next Week</span>
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <Calendar className="text-blue-600" size={16} />
-            </div>
-          </div>
-          <div className="text-3xl font-black text-zinc-900 tracking-tight">{nextWeekUnavailable()}</div>
-          <div className="text-xs font-bold text-zinc-500 mt-1 uppercase tracking-wider">Upcoming</div>
-        </div>
-
-        <div className="bg-gradient-to-br from-amber-50 to-white border border-amber-100 rounded-[2rem] p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-[10px] font-black text-amber-600 uppercase tracking-[0.2em]">All Requests</span>
-            <div className="p-2 bg-amber-100 rounded-lg">
-              <AlertCircle className="text-amber-600" size={16} />
-            </div>
-          </div>
-          <div className="text-3xl font-black text-amber-600 tracking-tight">{unavailableDates.length}</div>
-          <div className="text-xs font-bold text-zinc-500 mt-1 uppercase tracking-wider">Total Dates</div>
-        </div>
+        ))}
       </div>
 
-      {/* Action Button - Large & Ergonomic */}
+      {/* Deployment Restriction Initiation */}
       <button
         onClick={() => setShowModal(true)}
-        className="w-full py-5 bg-zinc-900 text-white rounded-[2rem] font-black hover:bg-black transition-all shadow-xl active:scale-[0.98] flex items-center justify-center gap-3"
+        className="group relative w-full py-6 bg-zinc-900 text-white rounded-[2rem] font-black uppercase tracking-[0.2em] text-xs hover:bg-black transition-all shadow-2xl hover:scale-[1.01] active:scale-95 flex items-center justify-center gap-3 overflow-hidden"
       >
-        <Plus size={24} />
-        Block Dates
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 to-indigo-600/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+        <Plus size={20} strokeWidth={4} />
+        Generate Restriction Block
       </button>
 
-      {/* Modal */}
+      {/* Strategic Restriction Generator Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
-            <h4 className="text-xl font-bold text-zinc-900 mb-4">Block Unavailability</h4>
+        <div className="fixed inset-0 bg-zinc-900/60 backdrop-blur-md z-[100] flex items-center justify-center p-4 animate-in fade-in duration-300">
+          <div className="bg-white rounded-[3rem] shadow-2xl max-w-md w-full p-8 sm:p-10 relative overflow-hidden animate-in zoom-in-95 duration-300">
+            <div className="absolute top-0 right-0 p-12 opacity-[0.03] pointer-events-none">
+              <Calendar size={200} />
+            </div>
 
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-zinc-700 mb-2">Start Date</label>
-                <input
-                  type="date"
-                  value={formData.startDate}
-                  onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                  className="w-full px-4 py-2 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
+            <div className="relative">
+              <h4 className="text-2xl font-black text-zinc-900 tracking-tight mb-8 flex items-center gap-3">
+                <div className="w-1.5 h-6 bg-blue-600 rounded-full" />
+                Block Configuration
+              </h4>
 
-              <div>
-                <label className="block text-sm font-medium text-zinc-700 mb-2">End Date</label>
-                <input
-                  type="date"
-                  value={formData.endDate}
-                  onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                  className="w-full px-4 py-2 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <label className="block text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1">Initiation Date</label>
+                  <input
+                    type="date"
+                    value={formData.startDate}
+                    onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                    className="w-full bg-zinc-50 border-2 border-zinc-100 text-zinc-900 px-6 py-4 rounded-2xl font-black text-xs outline-none focus:border-blue-600 focus:bg-white transition-all uppercase tracking-widest"
+                  />
+                </div>
 
-              <div>
-                <label className="block text-sm font-medium text-zinc-700 mb-2">Reason</label>
-                <select
-                  value={formData.reason}
-                  onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
-                  className="w-full px-4 py-2 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Select reason...</option>
-                  <option value="Vacation">Vacation</option>
-                  <option value="Sick Leave">Sick Leave</option>
-                  <option value="Personal">Personal</option>
-                  <option value="Other">Other</option>
-                </select>
-              </div>
+                <div className="space-y-2">
+                  <label className="block text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1">Termination Date</label>
+                  <input
+                    type="date"
+                    value={formData.endDate}
+                    onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                    className="w-full bg-zinc-50 border-2 border-zinc-100 text-zinc-900 px-6 py-4 rounded-2xl font-black text-xs outline-none focus:border-blue-600 focus:bg-white transition-all uppercase tracking-widest"
+                  />
+                </div>
 
-              <div className="flex gap-3 pt-4">
-                <button
-                  onClick={() => setShowModal(false)}
-                  className="flex-1 px-4 py-2 border border-zinc-300 rounded-lg text-sm font-semibold text-zinc-700 hover:bg-zinc-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleBlockDates}
-                  disabled={loading}
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 disabled:opacity-50"
-                >
-                  {loading ? 'Blocking...' : 'Block'}
-                </button>
+                <div className="space-y-2">
+                  <label className="block text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1">Exemption Rationale</label>
+                  <select
+                    value={formData.reason}
+                    onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
+                    className="w-full bg-zinc-50 border-2 border-zinc-100 text-zinc-900 px-6 py-4 rounded-2xl font-black text-xs outline-none focus:border-blue-600 focus:bg-white transition-all appearance-none cursor-pointer"
+                  >
+                    <option value="">SELECT PARAMETER...</option>
+                    <option value="Vacation">ANNUAL LEAVE</option>
+                    <option value="Sick Leave">MEDICAL EXEMPTION</option>
+                    <option value="Personal">PERSONAL CYCLE</option>
+                    <option value="Other">OTHER PROTOCOL</option>
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 pt-6">
+                  <button
+                    onClick={() => setShowModal(false)}
+                    className="px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest text-zinc-400 hover:text-zinc-900 transition-colors"
+                  >
+                    Abort Entry
+                  </button>
+                  <button
+                    onClick={handleBlockDates}
+                    disabled={loading}
+                    className="bg-zinc-900 text-white px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all shadow-xl disabled:bg-zinc-100 disabled:text-zinc-300"
+                  >
+                    {loading ? 'SYNCHRONIZING...' : 'COMMIT BLOCK'}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Grouped List */}
-      <div className="space-y-6">
+      {/* Restriction Log Chain */}
+      <div className="space-y-8">
         {Object.entries(groupedByReason).length === 0 ? (
-          <div className="text-center py-12 bg-zinc-50 rounded-xl border border-dashed border-zinc-200">
-            <CheckCircle2 className="mx-auto text-emerald-400 mb-3" size={48} />
-            <p className="text-zinc-600 font-medium">You're available all the time!</p>
-            <p className="text-zinc-400 text-sm mt-1">Block dates when you need time off</p>
+          <div className="py-24 text-center bg-zinc-50/50 border-2 border-dashed border-zinc-100 rounded-[3rem]">
+            <CheckCircle2 className="mx-auto text-emerald-300 mb-6" size={56} />
+            <p className="text-xs font-black text-zinc-400 uppercase tracking-[0.3em]">Operational Readiness 100%</p>
+            <p className="text-[10px] text-zinc-400 font-bold mt-2 uppercase tracking-tight">Deployment path clear of restrictions</p>
           </div>
         ) : (
           Object.entries(groupedByReason).map(([reason, dates]) => (
-            <div key={reason}>
-              <h4 className="text-sm font-semibold text-zinc-900 mb-3 flex items-center gap-2">
-                <AlertCircle size={16} className="text-amber-600" />
-                {reason} ({dates.length} days)
-              </h4>
-              <div className="space-y-2">
+            <div key={reason} className="animate-in slide-in-from-bottom-4 duration-500">
+              <div className="flex items-center gap-4 mb-4 px-2">
+                <div className="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center text-amber-600">
+                  <AlertCircle size={16} strokeWidth={3} />
+                </div>
+                <h4 className="text-[10px] font-black text-zinc-900 uppercase tracking-[0.2em]">
+                  {reason.toUpperCase()} <span className="text-zinc-400 ml-2 font-bold">// {dates.length} LOGS</span>
+                </h4>
+                <div className="flex-1 h-[1px] bg-zinc-100" />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {dates.sort((a, b) => a.date.localeCompare(b.date)).map(availability => (
                   <div
                     key={availability.id}
-                    className="flex items-center justify-between bg-white border border-zinc-200 p-4 rounded-lg hover:shadow-md transition-all"
+                    className="flex items-center justify-between bg-white border border-zinc-200 p-5 rounded-[1.5rem] hover:shadow-xl hover:shadow-zinc-100 transition-all group"
                   >
-                    <div>
-                      <div className="font-semibold text-sm text-zinc-900">
-                        {new Date(availability.date).toLocaleDateString('en-US', {
-                          weekday: 'short',
-                          month: 'short',
-                          day: 'numeric'
-                        })}
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-xl bg-zinc-50 flex flex-col items-center justify-center font-black text-zinc-400 group-hover:bg-zinc-900 group-hover:text-white transition-colors">
+                        <span className="text-[10px] leading-none mb-0.5">{new Date(availability.date).toLocaleDateString('en-US', { day: '2-digit' })}</span>
+                        <span className="text-[8px] leading-none uppercase">{new Date(availability.date).toLocaleDateString('en-US', { month: 'short' })}</span>
+                      </div>
+                      <div className="text-[11px] font-black text-zinc-900 uppercase tracking-widest">
+                        {new Date(availability.date).toLocaleDateString('en-US', { weekday: 'long' })}
                       </div>
                     </div>
                     <button
                       onClick={() => availability.id && handleRemoveBlock(availability.id)}
-                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                      className="p-2.5 text-zinc-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
                     >
-                      <X size={18} />
+                      <X size={18} strokeWidth={3} />
                     </button>
                   </div>
                 ))}
@@ -300,12 +299,6 @@ export const BulkAvailability: React.FC<BulkAvailabilityProps> = ({ currentUser,
         )}
       </div>
 
-      {/* Info */}
-      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-        <p className="text-sm text-blue-900">
-          <span className="font-bold">ℹ️ Note:</span> When you block dates, the admin will not assign you any shifts on those days.
-        </p>
-      </div>
     </div>
   );
 };

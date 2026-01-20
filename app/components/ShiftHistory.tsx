@@ -80,137 +80,97 @@ export const ShiftHistory: React.FC<ShiftHistoryProps> = ({ shifts, currentUser 
   };
 
   return (
-    <div className="space-y-8">
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white border border-zinc-200 rounded-xl p-4">
-          <div className="text-xs text-zinc-500 uppercase tracking-wider font-semibold mb-2">Total Shifts</div>
-          <div className="text-3xl font-black text-blue-600">{stats.totalShifts}</div>
-          <div className="text-xs text-zinc-400 mt-2">{stats.avgShiftsPerWeek} per week</div>
-        </div>
-
-        <div className="bg-white border border-zinc-200 rounded-xl p-4">
-          <div className="text-xs text-zinc-500 uppercase tracking-wider font-semibold mb-2">Total Hours</div>
-          <div className="text-3xl font-black text-emerald-600">{stats.totalHours}</div>
-          <div className="text-xs text-zinc-400 mt-2">{(stats.totalHours / 8).toFixed(0)} shifts</div>
-        </div>
-
-        <div className="bg-white border border-zinc-200 rounded-xl p-4">
-          <div className="text-xs text-zinc-500 uppercase tracking-wider font-semibold mb-2">Shift Distribution</div>
-          <div className="flex items-baseline gap-1 text-sm">
-            <span className="text-amber-600 font-bold">{stats.morningCount}</span>
-            <span className="text-zinc-400 text-xs">/</span>
-            <span className="text-blue-600 font-bold">{stats.eveningCount}</span>
-            <span className="text-zinc-400 text-xs">/</span>
-            <span className="text-slate-600 font-bold">{stats.nightCount}</span>
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500 pb-12">
+      {/* Tactical Stats Header - Optimized 2x2 for Mobile */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        {[
+          { label: 'Deployments', value: stats.totalShifts, sub: `${stats.avgShiftsPerWeek}/W Avg`, color: 'text-blue-600' },
+          { label: 'Total Hours', value: stats.totalHours, sub: 'Active Duty', color: 'text-emerald-600' },
+          { label: 'Distribution', value: `${stats.morningCount}/${stats.eveningCount}/${stats.nightCount}`, sub: 'M/E/N Split', color: 'text-zinc-900' },
+          { label: 'Trend', value: stats.trend.toUpperCase(), sub: 'Performance', color: stats.trend === 'up' ? 'text-emerald-600' : stats.trend === 'down' ? 'text-red-600' : 'text-zinc-400' }
+        ].map((stat, i) => (
+          <div key={i} className="bg-white border border-zinc-200 rounded-3xl p-4 sm:p-5 shadow-sm">
+            <div className="text-[8px] sm:text-[10px] text-zinc-400 uppercase tracking-widest font-black mb-1">{stat.label}</div>
+            <div className={`text-xl sm:text-3xl font-black ${stat.color} tracking-tighter`}>{stat.value}</div>
+            <div className="text-[8px] font-bold text-zinc-400 mt-1 uppercase tracking-tighter opacity-70">{stat.sub}</div>
           </div>
-          <div className="text-xs text-zinc-400 mt-2">M/E/N</div>
-        </div>
+        ))}
+      </div>
 
-        <div className="bg-white border border-zinc-200 rounded-xl p-4">
-          <div className="text-xs text-zinc-500 uppercase tracking-wider font-semibold mb-2">Trend</div>
-          <div className="flex items-center gap-2">
-            {stats.trend === 'up' && <TrendingUp className="text-emerald-600" size={24} />}
-            {stats.trend === 'down' && <TrendingUp className="text-red-600 rotate-180" size={24} />}
-            {stats.trend === 'stable' && <div className="text-2xl">→</div>}
-            <span className="text-sm font-semibold text-zinc-700 capitalize">{stats.trend}</span>
+      {/* Strategic Filter Ribbon - Simplified */}
+      <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-hide">
+        <div className="flex bg-zinc-100/50 p-1 rounded-2xl border border-zinc-200/50 w-max items-center gap-1">
+          <div className="flex gap-1">
+            {['30', '90', 'ALL'].map(range => (
+              <button
+                key={range}
+                onClick={() => setDateRange(range as any)}
+                className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${dateRange === range
+                  ? 'bg-white text-blue-600 shadow-sm ring-1 ring-zinc-200'
+                  : 'text-zinc-500'
+                  }`}
+              >
+                {range === 'ALL' ? 'Full' : `${range}D`}
+              </button>
+            ))}
+          </div>
+          <div className="w-[1px] h-4 bg-zinc-200 mx-1" />
+          <div className="flex gap-1">
+            {['ALL', ShiftType.MORNING, ShiftType.EVENING, ShiftType.NIGHT].map(type => (
+              <button
+                key={type}
+                onClick={() => setFilterType(type as any)}
+                className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${filterType === type
+                  ? 'bg-white text-blue-600 shadow-sm ring-1 ring-zinc-200'
+                  : 'text-zinc-500'
+                  }`}
+              >
+                {type === 'ALL' ? 'Units' : type.charAt(0)}
+              </button>
+            ))}
           </div>
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="bg-white border border-zinc-200 rounded-xl p-4 flex flex-wrap gap-3 items-center">
-        <Filter size={16} className="text-zinc-500" />
-
-        <div className="flex gap-2">
-          {['30', '90', '365', 'ALL'].map(range => (
-            <button
-              key={range}
-              onClick={() => setDateRange(range as any)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${dateRange === range
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200'
-                }`}
-            >
-              {range === 'ALL' ? 'All Time' : `${range}d`}
-            </button>
-          ))}
-        </div>
-
-        <div className="w-px h-6 bg-zinc-200"></div>
-
-        <div className="flex gap-2">
-          {['ALL', ShiftType.MORNING, ShiftType.EVENING, ShiftType.NIGHT].map(type => (
-            <button
-              key={type}
-              onClick={() => setFilterType(type as any)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${filterType === type
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200'
-                }`}
-            >
-              {type === 'ALL' ? 'All Types' : type}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Shift List */}
+      {/* Deployment Records - Enhanced for Mobile Legibility */}
       <div className="space-y-3">
         {userShifts.length === 0 ? (
-          <div className="text-center py-12 bg-zinc-50 rounded-xl border border-dashed border-zinc-200">
-            <Calendar className="mx-auto text-zinc-300 mb-3" size={48} />
-            <p className="text-zinc-500 font-medium">No shifts found</p>
-            <p className="text-zinc-400 text-sm mt-1">Try adjusting your filters</p>
+          <div className="py-20 text-center bg-zinc-100/30 border-2 border-dashed border-zinc-200 rounded-[2.5rem]">
+            <Calendar className="mx-auto text-zinc-300 mb-4" size={32} />
+            <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">No Operational Records</p>
           </div>
         ) : (
           userShifts.map(shift => (
             <div
               key={shift.id}
-              className={`border-l-4 p-4 rounded-lg transition-all hover:shadow-md ${getShiftColor(shift.type)}`}
-              style={{
-                borderLeftColor: shift.type === ShiftType.MORNING ? '#b45309' : shift.type === ShiftType.EVENING ? '#2563eb' : '#475569'
-              }}
+              className="bg-white border border-zinc-200 p-4 rounded-3xl transition-all active:scale-[0.98] group relative overflow-hidden flex items-center justify-between"
             >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="text-2xl">{getShiftIcon(shift.type)}</div>
-                  <div>
-                    <div className="font-semibold text-sm">{shift.type} Shift</div>
-                    <div className="text-xs opacity-75 flex items-center gap-1 mt-1">
-                      <Calendar size={12} />
-                      {new Date(shift.date).toLocaleDateString('en-US', {
-                        weekday: 'long',
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric'
-                      })}
-                    </div>
+              <div className="flex items-center gap-4">
+                <div className={`w-10 h-10 rounded-2xl flex items-center justify-center text-lg ${shift.type === ShiftType.MORNING ? 'bg-amber-50 text-amber-600' :
+                  shift.type === ShiftType.EVENING ? 'bg-blue-50 text-blue-600' :
+                    'bg-zinc-100 text-zinc-900'
+                  }`}>
+                  {getShiftIcon(shift.type)}
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-black text-xs text-zinc-900 uppercase tracking-tight">{shift.type}</span>
+                    {shift.manuallyCreated && <span className="text-[7px] bg-blue-600 text-white px-1.5 py-0.5 rounded-full font-black uppercase">Admin</span>}
+                  </div>
+                  <div className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest mt-0.5">
+                    {new Date(shift.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', weekday: 'short' })}
                   </div>
                 </div>
-                <div className="text-right">
-                  <div className="flex items-center gap-1 text-xs font-semibold opacity-75">
-                    <Clock size={12} />
-                    8h work
-                  </div>
-                  <div className="text-xs opacity-50 mt-1">
-                    {shift.lunchStart}-{shift.lunchEnd} lunch
-                  </div>
-                </div>
+              </div>
+
+              <div className="text-right">
+                <div className="text-[10px] font-black text-zinc-900 uppercase tracking-tighter">8.0 HRS</div>
+                <div className="text-[8px] font-bold text-zinc-400 uppercase tracking-widest mt-0.5">Duty Cycle</div>
               </div>
             </div>
           ))
         )}
       </div>
-
-      {/* Summary */}
-      {userShifts.length > 0 && (
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4">
-          <p className="text-sm text-blue-900">
-            <span className="font-semibold">Summary:</span> You've worked <span className="font-bold">{stats.totalShifts}</span> shifts ({stats.totalHours} hours) in the past {dateRange === 'ALL' ? 'all time' : `${dateRange} days`}.
-          </p>
-        </div>
-      )}
     </div>
   );
 };

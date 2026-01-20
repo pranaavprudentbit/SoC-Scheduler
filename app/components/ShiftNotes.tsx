@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Shift, User, ShiftNote } from '@/lib/types';
-import { MessageSquare, Send, Trash2 } from 'lucide-react';
+import { MessageSquare, Send, Trash2, Clock } from 'lucide-react';
 import { collection, addDoc, getDocs, query, where, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 
@@ -80,37 +80,49 @@ export const ShiftNotes: React.FC<ShiftNotesProps> = ({ shifts, currentUser, use
   const selectedShiftData = shifts.find(s => s.id === selectedShift);
 
   return (
-    <div className="space-y-8">
-      {/* Shift Selector */}
-      <div className="bg-white border border-zinc-200 rounded-xl p-5">
-        <label className="block text-sm font-semibold text-zinc-700 mb-3">Select a Past Shift</label>
-        <select
-          value={selectedShift}
-          onChange={(e) => setSelectedShift(e.target.value)}
-          className="w-full px-4 py-3 border border-zinc-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          <option value="">Choose a shift...</option>
-          {userPastShifts.map(shift => (
-            <option key={shift.id} value={shift.id}>
-              {shift.type} - {new Date(shift.date).toLocaleDateString('en-US', {
-                weekday: 'short',
-                month: 'short',
-                day: 'numeric'
-              })}
-            </option>
-          ))}
-        </select>
+    <div className="space-y-6 sm:space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500 pb-10">
+      {/* Tactical Shift Selection Hub */}
+      <div className="bg-white border border-zinc-200 rounded-[2.5rem] p-6 sm:p-8 shadow-sm">
+        <label className="block text-[10px] font-black text-zinc-400 uppercase tracking-[0.3em] mb-4 text-center sm:text-left">Target Deployment Selection</label>
+        <div className="relative group">
+          <select
+            value={selectedShift}
+            onChange={(e) => setSelectedShift(e.target.value)}
+            className="w-full bg-zinc-50 border-2 border-zinc-100 text-zinc-900 px-6 py-4 rounded-3xl font-bold appearance-none outline-none focus:border-blue-500 focus:ring-8 focus:ring-blue-500/5 transition-all cursor-pointer text-sm sm:text-base pr-12"
+          >
+            <option value="">Awaiting Operational Input...</option>
+            {userPastShifts.map(shift => (
+              <option key={shift.id} value={shift.id}>
+                {shift.type.toUpperCase()} DEPLOYMENT // {new Date(shift.date).toLocaleDateString('en-US', {
+                  weekday: 'short',
+                  month: 'numeric',
+                  day: 'numeric'
+                })}
+              </option>
+            ))}
+          </select>
+          <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-400 group-hover:text-blue-500 transition-colors">
+            <Clock size={18} />
+          </div>
+        </div>
       </div>
 
       {selectedShift && selectedShiftData && (
-        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-5">
-          <div className="flex items-center gap-3">
-            <div className="text-3xl">
+        <div className="bg-zinc-900 rounded-[2.5rem] p-6 sm:p-8 text-white relative overflow-hidden shadow-xl animate-in zoom-in-95 duration-300">
+          <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
+            <MessageSquare size={120} />
+          </div>
+          <div className="relative flex items-center gap-5">
+            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-3xl ${selectedShiftData.type === 'Morning' ? 'bg-amber-400/20 text-amber-400' :
+              selectedShiftData.type === 'Evening' ? 'bg-blue-400/20 text-blue-400' :
+                'bg-slate-400/20 text-slate-400'
+              }`}>
               {selectedShiftData.type === 'Morning' ? '☀️' : selectedShiftData.type === 'Evening' ? '🌆' : '🌙'}
             </div>
             <div>
-              <div className="font-semibold text-blue-900">{selectedShiftData.type} Shift</div>
-              <div className="text-sm text-blue-700">
+              <div className="text-[10px] font-black text-white/40 uppercase tracking-[0.3em] mb-1">Active Intelligence Segment</div>
+              <div className="font-black text-lg sm:text-xl tracking-tight uppercase">{selectedShiftData.type} Deployment Record</div>
+              <div className="text-xs font-bold text-blue-400 opacity-80 mt-1 uppercase tracking-widest leading-none">
                 {new Date(selectedShiftData.date).toLocaleDateString('en-US', {
                   weekday: 'long',
                   month: 'long',
@@ -124,105 +136,124 @@ export const ShiftNotes: React.FC<ShiftNotesProps> = ({ shifts, currentUser, use
       )}
 
       {selectedShift ? (
-        <>
-          {/* Note Input */}
-          <div className="space-y-3">
-            <label className="block text-sm font-semibold text-zinc-700">Add a Note</label>
-            <textarea
-              value={noteContent}
-              onChange={(e) => setNoteContent(e.target.value)}
-              placeholder="e.g., 'Printer broken - use backup in break room. Customer A called at 3pm, scheduled callback for evening shift.'"
-              rows={3}
-              className="w-full px-4 py-3 border border-zinc-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-            />
-            <button
-              onClick={handleAddNote}
-              disabled={loading || !noteContent.trim()}
-              className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
-            >
-              <Send size={16} />
-              {loading ? 'Adding...' : 'Add Note'}
-            </button>
+        <div className="space-y-6">
+          {/* Strat-Note Input Suite */}
+          <div className="space-y-4">
+            <div className="bg-white border border-zinc-200 rounded-[2.5rem] p-4 sm:p-6 shadow-sm focus-within:ring-8 focus-within:ring-blue-500/5 transition-all">
+              <label className="block text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] mb-3 ml-2">Intelligence Input Field</label>
+              <textarea
+                value={noteContent}
+                onChange={(e) => setNoteContent(e.target.value)}
+                placeholder="Log critical handover intel, equipment status, or tactical updates here..."
+                rows={4}
+                className="w-full bg-zinc-50 border-2 border-zinc-100 rounded-[2rem] p-5 text-sm font-medium outline-none focus:bg-white focus:border-blue-500 transition-all resize-none leading-relaxed"
+              />
+              <button
+                onClick={handleAddNote}
+                disabled={loading || !noteContent.trim()}
+                className="w-full mt-4 bg-blue-600 hover:bg-blue-700 disabled:bg-zinc-100 disabled:text-zinc-300 text-white py-4 rounded-[1.5rem] font-black uppercase tracking-widest text-xs transition-all flex items-center justify-center gap-3 shadow-lg hover:scale-[1.01] active:scale-95"
+              >
+                {loading ? (
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-current animate-bounce" />
+                    <div className="w-2 h-2 rounded-full bg-current animate-bounce delay-75" />
+                    <div className="w-2 h-2 rounded-full bg-current animate-bounce delay-150" />
+                  </div>
+                ) : (
+                  <>
+                    <Send size={14} strokeWidth={3} />
+                    Transmit Intelligence
+                  </>
+                )}
+              </button>
+            </div>
           </div>
 
-          {/* Notes List */}
-          <div>
-            <h4 className="text-sm font-semibold text-zinc-900 mb-3 flex items-center gap-2">
-              <MessageSquare size={16} className="text-zinc-600" />
-              Notes ({notes.length})
-            </h4>
+          {/* Records Display Chain */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between px-2">
+              <h4 className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.3em] flex items-center gap-3">
+                <MessageSquare size={14} strokeWidth={3} />
+                Chronological Intel Chain ({notes.length})
+              </h4>
+            </div>
 
             {notes.length === 0 ? (
-              <div className="text-center py-8 bg-zinc-50 rounded-xl border border-dashed border-zinc-200">
-                <MessageSquare className="mx-auto text-zinc-300 mb-2" size={32} />
-                <p className="text-zinc-500 text-sm">No notes yet</p>
+              <div className="py-20 text-center bg-zinc-50/50 border-2 border-dashed border-zinc-100 rounded-[2.5rem]">
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-white text-zinc-200 mb-4 shadow-sm">
+                  <MessageSquare size={32} />
+                </div>
+                <p className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em]">Zero Data Entries</p>
+                <p className="text-[9px] text-zinc-400 font-bold mt-1 uppercase">Awaiting initial transmission</p>
               </div>
             ) : (
-              <div className="space-y-3">
-                {notes.map(note => {
+              <div className="space-y-4">
+                {notes.map((note, idx) => {
                   const author = getAuthor(note.userId);
                   const isOwn = note.userId === currentUser.id;
 
                   return (
                     <div
                       key={note.id}
-                      className={`p-4 rounded-lg border ${isOwn
-                          ? 'bg-blue-50 border-blue-200'
-                          : 'bg-white border-zinc-200'
-                        } hover:shadow-md transition-all`}
+                      className={`p-5 sm:p-6 rounded-[2rem] border-2 transition-all hover:shadow-xl group relative overflow-hidden animate-in slide-in-from-bottom-4 duration-500`}
+                      style={{
+                        animationDelay: `${idx * 100}ms`,
+                        backgroundColor: isOwn ? '#ffffff' : '#f8fafc',
+                        borderColor: isOwn ? '#eff6ff' : '#f1f5f9'
+                      }}
                     >
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <img
-                            src={author?.avatar || 'https://via.placeholder.com/32'}
-                            alt={author?.name}
-                            className="w-8 h-8 rounded-full"
-                          />
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex items-center gap-3">
+                          <div className="relative h-10 w-10">
+                            <img
+                              src={author?.avatar || 'https://via.placeholder.com/40'}
+                              alt={author?.name}
+                              className="h-10 w-10 rounded-2xl object-cover ring-2 ring-zinc-50"
+                            />
+                            {isOwn && <div className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full border-2 border-white shadow-sm" />}
+                          </div>
                           <div>
-                            <div className="text-sm font-semibold text-zinc-900">
-                              {author?.name || 'Unknown'}
+                            <div className="text-xs font-black text-zinc-900 uppercase tracking-tight">
+                              {author?.name || 'External Signal'}
+                              {isOwn && <span className="ml-2 text-[8px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded font-black">SELF</span>}
                             </div>
-                            <div className="text-xs text-zinc-500">
-                              {new Date(note.createdAt).toLocaleDateString('en-US', {
-                                month: 'short',
-                                day: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit'
-                              })}
+                            <div className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest mt-0.5">
+                              {new Date(note.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} //
+                              <span className="ml-1">
+                                {new Date(note.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                              </span>
                             </div>
                           </div>
                         </div>
                         {isOwn && (
                           <button
                             onClick={() => handleDeleteNote(note.id)}
-                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-all"
-                            title="Delete note"
+                            className="p-2.5 text-zinc-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
                           >
-                            <Trash2 size={16} />
+                            <Trash2 size={16} strokeWidth={2.5} />
                           </button>
                         )}
                       </div>
-                      <p className="text-sm text-zinc-700 leading-relaxed whitespace-pre-wrap">{note.content}</p>
+                      <p className="text-sm sm:text-base text-zinc-700 leading-relaxed font-medium whitespace-pre-wrap pl-13">
+                        {note.content}
+                      </p>
                     </div>
                   );
                 })}
               </div>
             )}
           </div>
-        </>
+        </div>
       ) : (
-        <div className="text-center py-12 bg-zinc-50 rounded-xl border border-dashed border-zinc-200">
-          <MessageSquare className="mx-auto text-zinc-300 mb-3" size={48} />
-          <p className="text-zinc-500 font-medium">Select a shift to view or add notes</p>
+        <div className="py-24 text-center bg-zinc-50/50 border-2 border-dashed border-zinc-100 rounded-[3rem] animate-in fade-in duration-700">
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-white text-zinc-200 mb-6 shadow-sm">
+            <MessageSquare size={40} />
+          </div>
+          <p className="text-xs font-black text-zinc-400 uppercase tracking-[0.3em]">Operational Vacuum</p>
+          <p className="text-[10px] text-zinc-400 font-bold mt-2 uppercase tracking-tight">Select deployment segment to synchronize records</p>
         </div>
       )}
 
-      {/* Info */}
-      <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-        <p className="text-sm text-amber-900">
-          <span className="font-bold">💡 Tips:</span> Leave clear handover notes for the next person. Include issues, customer follow-ups, or equipment status.
-        </p>
-      </div>
     </div>
   );
 };

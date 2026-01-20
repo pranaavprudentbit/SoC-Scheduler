@@ -1,9 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { auth, db } from '@/lib/firebase/config';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
+import { auth } from '@/lib/firebase/config';
 import { User } from '@/lib/types';
 import { UserPlus } from 'lucide-react';
 
@@ -18,6 +16,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({
 }) => {
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -28,34 +27,44 @@ export const UserManagement: React.FC<UserManagementProps> = ({
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setError(null);
 
     try {
-      // Create auth user
-      const userCredential = await createUserWithEmailAndPassword(
-        auth,
-        formData.email,
-        formData.password
-      );
+      // Get current user's token for authorization
+      const currentUser = auth.currentUser;
+      if (!currentUser) {
+        throw new Error('You must be logged in to create users');
+      }
+      const idToken = await currentUser.getIdToken();
 
-      // Create user document in Firestore
-      await setDoc(doc(db, 'users', userCredential.user.uid), {
-        id: userCredential.user.uid,
-        name: formData.name,
-        email: formData.email,
-        role: formData.role,
-        isAdmin: false, // Default to non-admin, must be set manually in database
-        avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${formData.name}`,
-        preferredDays: [],
-        preferredShifts: [],
-        unavailableDates: [],
-        createdAt: new Date().toISOString(),
+      // Use API route to create user (doesn't affect current session)
+      const response = await fetch('/api/users', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+          name: formData.name,
+          role: formData.role,
+          isAdmin: false,
+        }),
       });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to create user');
+      }
 
       setFormData({ email: '', password: '', name: '', role: 'ANALYST' });
       setShowForm(false);
       onRefresh();
     } catch (err: any) {
       console.error('Failed to create user', err);
+      setError(err.message || 'Failed to create user');
     } finally {
       setLoading(false);
     }
@@ -63,14 +72,14 @@ export const UserManagement: React.FC<UserManagementProps> = ({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 sm:mb-8">
         <div>
-          <h3 className="text-zinc-900 text-lg font-semibold">Team Members</h3>
-          <p className="text-zinc-500 text-sm mt-1">Manage user accounts</p>
+          <h3 className="text-zinc-900 text-base sm:text-lg font-semibold">Team Members</h3>
+          <p className="text-zinc-500 text-xs sm:text-sm mt-1">Manage user accounts</p>
         </div>
         <button
           onClick={() => setShowForm(!showForm)}
-          className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white text-sm rounded-xl hover:bg-blue-700 transition-colors font-medium"
+          className="flex items-center justify-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 bg-blue-600 text-white text-sm rounded-xl hover:bg-blue-700 transition-colors font-medium w-full sm:w-auto"
         >
           <UserPlus size={16} />
           Add User
@@ -78,8 +87,8 @@ export const UserManagement: React.FC<UserManagementProps> = ({
       </div>
 
       {showForm && (
-        <form onSubmit={handleCreateUser} className="p-6 bg-white border border-zinc-200 rounded-xl space-y-5">
-          <div className="grid grid-cols-2 gap-4">
+        <form onSubmit={handleCreateUser} className="p-4 sm:p-6 bg-white border border-zinc-200 rounded-xl space-y-4 sm:space-y-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold text-zinc-700 mb-2">Name</label>
               <input
@@ -124,6 +133,11 @@ export const UserManagement: React.FC<UserManagementProps> = ({
               minLength={6}
             />
           </div>
+          {error && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-xs text-red-700 font-medium">{error}</p>
+            </div>
+          )}
           <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
             <p className="text-xs text-amber-900 font-medium">
               <strong>Note:</strong> Admin privileges must be set manually in the database. Contact the developer to grant admin access.

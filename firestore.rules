@@ -1,0 +1,70 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // Check if user has admin role in 'users' collection
+    // Note: This requires a read, which costs. For high traffic, custom claims are better.
+    function isAdmin() {
+      return isAuthenticated() && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
+
+    // Users: Read everyone (for schedule), Write own profile
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow update: if isOwner(userId) || isAdmin();
+      allow create: if isAdmin(); // Only admins can add users
+    }
+
+    // Shifts: Read everyone, Create/Update/Delete Admin only
+    match /shifts/{shiftId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // Availability: Read Admin/Owner, Write Owner
+    // 'user_availability' logic
+    match /user_availability/{docId} {
+      allow read: if isAuthenticated(); // Allow reading so Calendar can show gaps, or restrict to isOwner/isAdmin
+      allow write: if isAuthenticated() && (request.resource.data.userId == request.auth.uid || resource.data.userId == request.auth.uid);
+    }
+
+    // Activity Logs: Read Own or Admin, Write All (Auth)
+    match /activity_logs/{logId} {
+      allow read: if isAuthenticated() && (isOwner(resource.data.userId) || isAdmin());
+      allow create: if isAuthenticated(); // Allow client to log actions
+    }
+
+    // Swaps: Read All, Create Owner, Update involved parties
+    match /swap_requests/{requestId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.resource.data.requesterId == request.auth.uid;
+      allow update: if isAuthenticated() && (
+        isOwner(resource.data.requesterId) || 
+        isOwner(resource.data.recipientId) || 
+        isAdmin()
+      );
+    }
+
+    // Leaves: Read Own/Admin, Create Owner, Update Admin
+    match /leave_requests/{requestId} {
+      allow read: if isAuthenticated() && (isOwner(resource.data.userId) || isAdmin());
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update: if isAdmin(); // Only admin can approve/reject
+    }
+
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -28,7 +28,7 @@ export const ShiftHistory: React.FC<ShiftHistoryProps> = ({ shifts, currentUser 
   const userShifts = useMemo(() => {
     const today = new Date().toISOString().split('T')[0];
     const cutoff = getCutoffDate();
-    
+
     return shifts
       .filter(s => s.userId === currentUser.id && s.date < today && s.date >= cutoff)
       .filter(s => filterType === 'ALL' ? true : s.type === filterType)
@@ -81,11 +81,6 @@ export const ShiftHistory: React.FC<ShiftHistoryProps> = ({ shifts, currentUser 
 
   return (
     <div className="space-y-8">
-      <div>
-        <h3 className="text-2xl font-bold text-zinc-900 mb-2">Shift History</h3>
-        <p className="text-zinc-500 text-sm">Track your past shifts and performance trends</p>
-      </div>
-
       {/* Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white border border-zinc-200 rounded-xl p-4">
@@ -126,17 +121,16 @@ export const ShiftHistory: React.FC<ShiftHistoryProps> = ({ shifts, currentUser 
       {/* Filters */}
       <div className="bg-white border border-zinc-200 rounded-xl p-4 flex flex-wrap gap-3 items-center">
         <Filter size={16} className="text-zinc-500" />
-        
+
         <div className="flex gap-2">
           {['30', '90', '365', 'ALL'].map(range => (
             <button
               key={range}
               onClick={() => setDateRange(range as any)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                dateRange === range
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${dateRange === range
                   ? 'bg-blue-600 text-white'
                   : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200'
-              }`}
+                }`}
             >
               {range === 'ALL' ? 'All Time' : `${range}d`}
             </button>
@@ -150,11 +144,10 @@ export const ShiftHistory: React.FC<ShiftHistoryProps> = ({ shifts, currentUser 
             <button
               key={type}
               onClick={() => setFilterType(type as any)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                filterType === type
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${filterType === type
                   ? 'bg-blue-600 text-white'
                   : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200'
-              }`}
+                }`}
             >
               {type === 'ALL' ? 'All Types' : type}
             </button>
@@ -186,9 +179,9 @@ export const ShiftHistory: React.FC<ShiftHistoryProps> = ({ shifts, currentUser 
                     <div className="font-semibold text-sm">{shift.type} Shift</div>
                     <div className="text-xs opacity-75 flex items-center gap-1 mt-1">
                       <Calendar size={12} />
-                      {new Date(shift.date).toLocaleDateString('en-US', { 
+                      {new Date(shift.date).toLocaleDateString('en-US', {
                         weekday: 'long',
-                        month: 'short', 
+                        month: 'short',
                         day: 'numeric',
                         year: 'numeric'
                       })}

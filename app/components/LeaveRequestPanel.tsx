@@ -25,7 +25,7 @@ export const LeaveRequestPanel: React.FC<LeaveRequestPanelProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.date || !formData.reason.trim()) {
       return;
     }
@@ -70,25 +70,20 @@ export const LeaveRequestPanel: React.FC<LeaveRequestPanelProps> = ({
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-semibold text-zinc-900">Leave Requests</h2>
-          <p className="text-zinc-500 text-sm mt-1">Request time off and track your leave status</p>
-        </div>
-        
+      <div className="flex justify-end">
         <button
           onClick={() => setIsCreating(!isCreating)}
-          className="px-5 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition-all flex items-center gap-2"
+          className="px-5 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition-all flex items-center justify-center gap-2 w-full sm:w-auto shadow-md"
         >
           <Calendar size={16} />
-          {isCreating ? 'Cancel' : 'Request Leave'}
+          {isCreating ? 'Cancel Request' : 'New Leave Request'}
         </button>
       </div>
 
       {isCreating && (
         <form onSubmit={handleSubmit} className="bg-blue-50 border border-blue-200 rounded-xl p-6 space-y-4">
           <h3 className="font-semibold text-zinc-900">New Leave Request</h3>
-          
+
           <div>
             <label className="block text-sm font-medium text-zinc-700 mb-2">Date</label>
             <input
@@ -148,11 +143,11 @@ export const LeaveRequestPanel: React.FC<LeaveRequestPanelProps> = ({
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
                     <span className="text-sm font-semibold text-zinc-900">
-                      {new Date(request.date).toLocaleDateString('en-US', { 
-                        weekday: 'short', 
-                        year: 'numeric', 
-                        month: 'short', 
-                        day: 'numeric' 
+                      {new Date(request.date).toLocaleDateString('en-US', {
+                        weekday: 'short',
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric'
                       })}
                     </span>
                     <span className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(request.status)}`}>

@@ -29,7 +29,7 @@ export const ShiftNotes: React.FC<ShiftNotesProps> = ({ shifts, currentUser, use
 
   const loadNotes = async () => {
     if (!selectedShift) return;
-    
+
     try {
       const q = query(collection(db, 'shift_notes'), where('shiftId', '==', selectedShift));
       const snapshot = await getDocs(q);
@@ -81,11 +81,6 @@ export const ShiftNotes: React.FC<ShiftNotesProps> = ({ shifts, currentUser, use
 
   return (
     <div className="space-y-8">
-      <div>
-        <h3 className="text-2xl font-bold text-zinc-900 mb-2">Shift Notes & Handover</h3>
-        <p className="text-zinc-500 text-sm">Leave notes for teammates working your shifts or view notes from others</p>
-      </div>
-
       {/* Shift Selector */}
       <div className="bg-white border border-zinc-200 rounded-xl p-5">
         <label className="block text-sm font-semibold text-zinc-700 mb-3">Select a Past Shift</label>
@@ -167,15 +162,14 @@ export const ShiftNotes: React.FC<ShiftNotesProps> = ({ shifts, currentUser, use
                 {notes.map(note => {
                   const author = getAuthor(note.userId);
                   const isOwn = note.userId === currentUser.id;
-                  
+
                   return (
                     <div
                       key={note.id}
-                      className={`p-4 rounded-lg border ${
-                        isOwn
+                      className={`p-4 rounded-lg border ${isOwn
                           ? 'bg-blue-50 border-blue-200'
                           : 'bg-white border-zinc-200'
-                      } hover:shadow-md transition-all`}
+                        } hover:shadow-md transition-all`}
                     >
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex items-center gap-2">

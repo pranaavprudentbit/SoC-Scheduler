@@ -89,13 +89,8 @@ export const PerformanceDashboard: React.FC<PerformanceDashboardProps> = ({
 
   return (
     <div className="space-y-8">
-      <div>
-        <h3 className="text-2xl font-bold text-zinc-900 mb-2">Performance Dashboard</h3>
-        <p className="text-zinc-500 text-sm">Your reliability score and achievements</p>
-      </div>
-
       {/* Reliability Score - Big Card */}
-      <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl p-8 text-white shadow-xl">
+      <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl p-6 sm:p-8 text-white shadow-xl">
         <div className="flex items-start justify-between">
           <div>
             <div className="text-xs font-semibold opacity-90 uppercase tracking-wider mb-3">Reliability Score</div>
@@ -104,10 +99,10 @@ export const PerformanceDashboard: React.FC<PerformanceDashboardProps> = ({
               {personalMetrics.reliabilityScore >= 90
                 ? 'Exceptional performer'
                 : personalMetrics.reliabilityScore >= 75
-                ? 'Strong contributor'
-                : personalMetrics.reliabilityScore >= 50
-                ? 'Consistent performer'
-                : 'Build your reliability'}
+                  ? 'Strong contributor'
+                  : personalMetrics.reliabilityScore >= 50
+                    ? 'Consistent performer'
+                    : 'Build your reliability'}
             </div>
           </div>
           <Award className="text-blue-200" size={64} />
@@ -169,8 +164,8 @@ export const PerformanceDashboard: React.FC<PerformanceDashboardProps> = ({
             {personalMetrics.reliabilityScore > teamAvg.reliability
               ? 'Above average'
               : personalMetrics.reliabilityScore < teamAvg.reliability
-              ? 'Below average'
-              : 'At average'}
+                ? 'Below average'
+                : 'At average'}
           </div>
         </div>
       </div>

@@ -2,13 +2,16 @@
 
 import React, { useState } from 'react';
 import { User, Shift, LeaveRequest } from '@/lib/types';
-import { AlertTriangle, BrainCircuit, Users, CalendarDays, FileText, BarChart3, Settings } from 'lucide-react';
+import { AlertTriangle, BrainCircuit, Users, CalendarDays, FileText, BarChart3, Settings, Activity, Zap, TrendingUp } from 'lucide-react';
 import { UserManagement } from './UserManagement';
 import { AdminCalendarShiftManager } from './AdminCalendarShiftManager';
 import { AdminLeaveManagement } from './AdminLeaveManagement';
 import { AnalyticsDashboard } from './AnalyticsDashboard';
 import { BulkOperations } from './BulkOperations';
 import { ShiftConfigPanel } from './ShiftConfigPanel';
+import { ActivityLog } from './ActivityLog';
+import { TeamCoverageHeatmap } from './TeamCoverageHeatmap';
+import { ShiftRecommendations } from './ShiftRecommendations';
 
 interface AdminPanelProps {
   users: User[];
@@ -19,43 +22,43 @@ interface AdminPanelProps {
   onRefresh: () => void;
 }
 
-export const AdminPanel: React.FC<AdminPanelProps> = ({ 
-  users, 
-  shifts, 
+export const AdminPanel: React.FC<AdminPanelProps> = ({
+  users,
+  shifts,
   leaveRequests,
   currentUser,
-  setShifts, 
-  onRefresh 
+  setShifts,
+  onRefresh
 }) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [activeSection, setActiveSection] = useState<'overview' | 'analytics' | 'shifts' | 'bulk' | 'users' | 'leaves' | 'config'>('overview');
+  const [activeSection, setActiveSection] = useState<'overview' | 'analytics' | 'shifts' | 'bulk' | 'users' | 'leaves' | 'activity' | 'coverage' | 'recommendations' | 'config'>('overview');
 
   const handleGenerate = async () => {
     setIsGenerating(true);
     setError(null);
     try {
       const today = new Date().toISOString().split('T')[0];
-      
+
       // Fetch shift configuration
       const { doc: docFunc, getDoc } = await import('firebase/firestore');
       const { db } = await import('@/lib/firebase/config');
       const configDoc = await getDoc(docFunc(db, 'system_config', 'shift_timings'));
       const shiftConfig = configDoc.exists() ? configDoc.data() : null;
-      
+
       const response = await fetch('/api/generate-schedule', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          users, 
-          startDate: today, 
+        body: JSON.stringify({
+          users,
+          startDate: today,
           days: 7,
-          shiftConfig 
+          shiftConfig
         })
       });
-      
+
       if (!response.ok) throw new Error('Failed to generate schedule');
-      
+
       const newShifts = await response.json();
       setShifts(newShifts);
       onRefresh();
@@ -78,61 +81,59 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       </div>
 
       {/* Navigation Tabs */}
-      <div className="flex gap-2 border-b border-zinc-200 pb-4">
+      <div className="flex gap-2 border-b border-zinc-200 pb-4 overflow-x-auto scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
         <button
           onClick={() => setActiveSection('overview')}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-t-lg text-sm font-semibold transition-all ${
-            activeSection === 'overview'
-              ? 'bg-blue-600 text-white'
-              : 'text-zinc-600 hover:bg-zinc-100'
-          }`}
+          className={`flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-t-lg text-xs sm:text-sm font-semibold transition-all whitespace-nowrap flex-shrink-0 ${activeSection === 'overview'
+            ? 'bg-blue-600 text-white'
+            : 'text-zinc-600 hover:bg-zinc-100'
+            }`}
         >
           <BrainCircuit size={16} />
-          Overview
+          <span className="hidden sm:inline">Overview</span>
+          <span className="sm:hidden">Home</span>
         </button>
         <button
           onClick={() => setActiveSection('analytics')}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-t-lg text-sm font-semibold transition-all ${
-            activeSection === 'analytics'
-              ? 'bg-blue-600 text-white'
-              : 'text-zinc-600 hover:bg-zinc-100'
-          }`}
+          className={`flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-t-lg text-xs sm:text-sm font-semibold transition-all whitespace-nowrap flex-shrink-0 ${activeSection === 'analytics'
+            ? 'bg-blue-600 text-white'
+            : 'text-zinc-600 hover:bg-zinc-100'
+            }`}
         >
           <BarChart3 size={16} />
           Analytics
         </button>
         <button
           onClick={() => setActiveSection('shifts')}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-t-lg text-sm font-semibold transition-all ${
-            activeSection === 'shifts'
-              ? 'bg-blue-600 text-white'
-              : 'text-zinc-600 hover:bg-zinc-100'
-          }`}
+          className={`flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-t-lg text-xs sm:text-sm font-semibold transition-all whitespace-nowrap flex-shrink-0 ${activeSection === 'shifts'
+            ? 'bg-blue-600 text-white'
+            : 'text-zinc-600 hover:bg-zinc-100'
+            }`}
         >
           <CalendarDays size={16} />
           Shifts
         </button>
         <button
           onClick={() => setActiveSection('bulk')}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-t-lg text-sm font-semibold transition-all ${
-            activeSection === 'bulk'
-              ? 'bg-blue-600 text-white'
-              : 'text-zinc-600 hover:bg-zinc-100'
-          }`}
+          className={`flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-t-lg text-xs sm:text-sm font-semibold transition-all whitespace-nowrap flex-shrink-0 ${activeSection === 'bulk'
+            ? 'bg-blue-600 text-white'
+            : 'text-zinc-600 hover:bg-zinc-100'
+            }`}
         >
           <BarChart3 size={16} />
-          Bulk Ops
+          <span className="hidden sm:inline">Bulk Ops</span>
+          <span className="sm:hidden">Bulk</span>
         </button>
         <button
           onClick={() => setActiveSection('leaves')}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-t-lg text-sm font-semibold transition-all relative ${
-            activeSection === 'leaves'
-              ? 'bg-blue-600 text-white'
-              : 'text-zinc-600 hover:bg-zinc-100'
-          }`}
+          className={`flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-t-lg text-xs sm:text-sm font-semibold transition-all relative whitespace-nowrap flex-shrink-0 ${activeSection === 'leaves'
+            ? 'bg-blue-600 text-white'
+            : 'text-zinc-600 hover:bg-zinc-100'
+            }`}
         >
           <FileText size={16} />
-          Leave Requests
+          <span className="hidden sm:inline">Leave Requests</span>
+          <span className="sm:hidden">Leaves</span>
           {pendingLeaves > 0 && (
             <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
               {pendingLeaves}
@@ -141,22 +142,50 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         </button>
         <button
           onClick={() => setActiveSection('users')}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-t-lg text-sm font-semibold transition-all ${
-            activeSection === 'users'
-              ? 'bg-blue-600 text-white'
-              : 'text-zinc-600 hover:bg-zinc-100'
-          }`}
+          className={`flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-t-lg text-xs sm:text-sm font-semibold transition-all whitespace-nowrap flex-shrink-0 ${activeSection === 'users'
+            ? 'bg-blue-600 text-white'
+            : 'text-zinc-600 hover:bg-zinc-100'
+            }`}
         >
           <Users size={16} />
           Users
         </button>
         <button
+          onClick={() => setActiveSection('coverage')}
+          className={`flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-t-lg text-xs sm:text-sm font-semibold transition-all whitespace-nowrap flex-shrink-0 ${activeSection === 'coverage'
+            ? 'bg-blue-600 text-white'
+            : 'text-zinc-600 hover:bg-zinc-100'
+            }`}
+        >
+          <Zap size={16} />
+          Coverage
+        </button>
+        <button
+          onClick={() => setActiveSection('recommendations')}
+          className={`flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-t-lg text-xs sm:text-sm font-semibold transition-all whitespace-nowrap flex-shrink-0 ${activeSection === 'recommendations'
+            ? 'bg-blue-600 text-white'
+            : 'text-zinc-600 hover:bg-zinc-100'
+            }`}
+        >
+          <TrendingUp size={16} />
+          Suggestions
+        </button>
+        <button
+          onClick={() => setActiveSection('activity')}
+          className={`flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-t-lg text-xs sm:text-sm font-semibold transition-all whitespace-nowrap flex-shrink-0 ${activeSection === 'activity'
+            ? 'bg-blue-600 text-white'
+            : 'text-zinc-600 hover:bg-zinc-100'
+            }`}
+        >
+          <Activity size={16} />
+          Logs
+        </button>
+        <button
           onClick={() => setActiveSection('config')}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-t-lg text-sm font-semibold transition-all ${
-            activeSection === 'config'
-              ? 'bg-blue-600 text-white'
-              : 'text-zinc-600 hover:bg-zinc-100'
-          }`}
+          className={`flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-t-lg text-xs sm:text-sm font-semibold transition-all whitespace-nowrap flex-shrink-0 ${activeSection === 'config'
+            ? 'bg-blue-600 text-white'
+            : 'text-zinc-600 hover:bg-zinc-100'
+            }`}
         >
           <Settings size={16} />
           Timings
@@ -187,11 +216,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             <button
               onClick={handleGenerate}
               disabled={isGenerating}
-              className={`flex items-center gap-2 px-5 sm:px-8 py-3 sm:py-4 rounded-xl sm:rounded-2xl text-sm font-bold transition-all shadow-xl ${
-                isGenerating 
-                  ? 'bg-zinc-100 text-zinc-400 cursor-not-allowed' 
-                  : 'bg-white text-blue-600 hover:bg-blue-50 hover:shadow-2xl transform hover:scale-105'
-              }`}
+              className={`flex items-center gap-2 px-5 sm:px-8 py-3 sm:py-4 rounded-xl sm:rounded-2xl text-sm font-bold transition-all shadow-xl ${isGenerating
+                ? 'bg-zinc-100 text-zinc-400 cursor-not-allowed'
+                : 'bg-white text-blue-600 hover:bg-blue-50 hover:shadow-2xl transform hover:scale-105'
+                }`}
             >
               <BrainCircuit size={20} />
               <span className="hidden sm:inline">{isGenerating ? "Generating..." : "Generate Schedule"}</span>
@@ -224,25 +252,25 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       )}
 
       {activeSection === 'analytics' && (
-        <AnalyticsDashboard 
-          users={users} 
-          shifts={shifts} 
+        <AnalyticsDashboard
+          users={users}
+          shifts={shifts}
         />
       )}
 
       {activeSection === 'shifts' && (
-        <AdminCalendarShiftManager 
-          users={users} 
-          shifts={shifts} 
-          onRefresh={onRefresh} 
+        <AdminCalendarShiftManager
+          users={users}
+          shifts={shifts}
+          onRefresh={onRefresh}
         />
       )}
 
       {activeSection === 'bulk' && (
-        <BulkOperations 
-          users={users} 
-          shifts={shifts} 
-          onRefresh={onRefresh} 
+        <BulkOperations
+          users={users}
+          shifts={shifts}
+          onRefresh={onRefresh}
         />
       )}
 
@@ -256,14 +284,26 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       )}
 
       {activeSection === 'users' && (
-        <UserManagement 
-          users={users} 
-          onRefresh={onRefresh} 
+        <UserManagement
+          users={users}
+          onRefresh={onRefresh}
         />
       )}
 
       {activeSection === 'config' && (
         <ShiftConfigPanel />
+      )}
+
+      {activeSection === 'activity' && (
+        <ActivityLog currentUser={currentUser} />
+      )}
+
+      {activeSection === 'coverage' && (
+        <TeamCoverageHeatmap shifts={shifts} />
+      )}
+
+      {activeSection === 'recommendations' && (
+        <ShiftRecommendations shifts={shifts} currentUser={currentUser} />
       )}
     </div>
   );

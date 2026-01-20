@@ -13,11 +13,11 @@ interface SwapMarketplaceProps {
   onRefresh: () => void;
 }
 
-export const SwapMarketplace: React.FC<SwapMarketplaceProps> = ({ 
-  currentUser, 
-  users, 
-  shifts, 
-  onRefresh 
+export const SwapMarketplace: React.FC<SwapMarketplaceProps> = ({
+  currentUser,
+  users,
+  shifts,
+  onRefresh
 }) => {
   const [swapRequests, setSwapRequests] = useState<SwapRequest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -144,12 +144,12 @@ export const SwapMarketplace: React.FC<SwapMarketplaceProps> = ({
     const myPrefs = currentUser.preferences;
     const swapDate = new Date(swap.targetShiftDate);
     const dayName = swapDate.toLocaleDateString('en-US', { weekday: 'long' });
-    
+
     let score = 50; // Base score
-    
+
     if (myPrefs.preferredShifts?.includes(swap.targetShiftType)) score += 30;
     if (myPrefs.preferredDays?.includes(dayName)) score += 20;
-    
+
     if (score >= 80) return '🔥 Great Match';
     if (score >= 60) return '✨ Good Match';
     return '👌 Okay Match';
@@ -200,21 +200,19 @@ export const SwapMarketplace: React.FC<SwapMarketplaceProps> = ({
       <div className="flex gap-2 border-b border-zinc-200">
         <button
           onClick={() => setActiveTab('available')}
-          className={`px-4 py-2 text-sm font-semibold transition-all ${
-            activeTab === 'available'
-              ? 'border-b-2 border-blue-600 text-blue-600'
-              : 'text-zinc-500 hover:text-zinc-700'
-          }`}
+          className={`px-4 py-2 text-sm font-semibold transition-all ${activeTab === 'available'
+            ? 'border-b-2 border-blue-600 text-blue-600'
+            : 'text-zinc-500 hover:text-zinc-700'
+            }`}
         >
           Available Swaps ({availableSwaps.length})
         </button>
         <button
           onClick={() => setActiveTab('myRequests')}
-          className={`px-4 py-2 text-sm font-semibold transition-all ${
-            activeTab === 'myRequests'
-              ? 'border-b-2 border-blue-600 text-blue-600'
-              : 'text-zinc-500 hover:text-zinc-700'
-          }`}
+          className={`px-4 py-2 text-sm font-semibold transition-all ${activeTab === 'myRequests'
+            ? 'border-b-2 border-blue-600 text-blue-600'
+            : 'text-zinc-500 hover:text-zinc-700'
+            }`}
         >
           My Requests ({myRequests.length})
         </button>
@@ -235,26 +233,34 @@ export const SwapMarketplace: React.FC<SwapMarketplaceProps> = ({
               if (!requester) return null;
 
               return (
-                <div key={swap.id} className="bg-white border border-zinc-200 rounded-xl p-5 hover:shadow-lg transition-all">
-                  <div className="flex items-start gap-4">
-                    <img src={requester.avatar} alt={requester.name} className="w-12 h-12 rounded-full" />
+                <div key={swap.id} className="bg-white border border-zinc-200 rounded-xl p-4 sm:p-5 hover:shadow-lg transition-all">
+                  <div className="flex flex-col sm:flex-row sm:items-start gap-4">
+                    <div className="flex items-center gap-3 sm:block">
+                      <img src={requester.avatar} alt={requester.name} className="w-10 h-10 sm:w-12 sm:h-12 rounded-full" />
+                      <div className="sm:hidden">
+                        <span className="font-semibold text-zinc-900">{requester.name}</span>
+                        <span className="ml-2 text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded-full font-medium">
+                          {getMatchScore(swap)}
+                        </span>
+                      </div>
+                    </div>
                     <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
+                      <div className="hidden sm:flex items-center gap-2 mb-2">
                         <span className="font-semibold text-zinc-900">{requester.name}</span>
                         <span className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded-full font-medium">
                           {getMatchScore(swap)}
                         </span>
                       </div>
-                      
+
                       <div className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg border ${getShiftColor(swap.targetShiftType)} mb-3`}>
                         <span className="text-lg">{getShiftIcon(swap.targetShiftType)}</span>
                         <div>
                           <div className="text-sm font-bold">{swap.targetShiftType} Shift</div>
                           <div className="text-xs">
-                            {new Date(swap.targetShiftDate).toLocaleDateString('en-US', { 
-                              weekday: 'short', 
-                              month: 'short', 
-                              day: 'numeric' 
+                            {new Date(swap.targetShiftDate).toLocaleDateString('en-US', {
+                              weekday: 'short',
+                              month: 'short',
+                              day: 'numeric'
                             })}
                           </div>
                         </div>
@@ -262,8 +268,8 @@ export const SwapMarketplace: React.FC<SwapMarketplaceProps> = ({
 
                       {swap.reason && (
                         <div className="flex items-start gap-2 text-sm text-zinc-600 mb-3">
-                          <MessageSquare size={14} className="mt-0.5 text-zinc-400" />
-                          <span className="italic">"{swap.reason}"</span>
+                          <MessageSquare size={14} className="mt-0.5 text-zinc-400 flex-shrink-0" />
+                          <span className="italic line-clamp-2">"{swap.reason}"</span>
                         </div>
                       )}
 
@@ -275,7 +281,7 @@ export const SwapMarketplace: React.FC<SwapMarketplaceProps> = ({
 
                     <button
                       onClick={() => handleAcceptSwap(swap)}
-                      className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-semibold hover:bg-emerald-700 transition-colors"
+                      className="flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 text-white rounded-lg text-sm font-semibold hover:bg-emerald-700 transition-colors w-full sm:w-auto"
                     >
                       <Check size={16} />
                       Accept
@@ -302,9 +308,10 @@ export const SwapMarketplace: React.FC<SwapMarketplaceProps> = ({
                 switch (swap.status) {
                   case 'PENDING':
                     return <span className="text-xs px-3 py-1 bg-amber-100 text-amber-700 rounded-full font-medium">Pending</span>;
-                  case 'ACCEPTED':
+                  case 'ACCEPTED': {
                     const acceptor = users.find(u => u.id === swap.respondedBy);
                     return <span className="text-xs px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full font-medium">Accepted by {acceptor?.name}</span>;
+                  }
                   case 'REJECTED':
                     return <span className="text-xs px-3 py-1 bg-red-100 text-red-700 rounded-full font-medium">Rejected</span>;
                 }
@@ -317,16 +324,16 @@ export const SwapMarketplace: React.FC<SwapMarketplaceProps> = ({
                       <div className="flex items-center gap-2 mb-3">
                         {getStatusBadge()}
                       </div>
-                      
+
                       <div className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg border ${getShiftColor(swap.targetShiftType)} mb-3`}>
                         <span className="text-lg">{getShiftIcon(swap.targetShiftType)}</span>
                         <div>
                           <div className="text-sm font-bold">{swap.targetShiftType} Shift</div>
                           <div className="text-xs">
-                            {new Date(swap.targetShiftDate).toLocaleDateString('en-US', { 
-                              weekday: 'short', 
-                              month: 'short', 
-                              day: 'numeric' 
+                            {new Date(swap.targetShiftDate).toLocaleDateString('en-US', {
+                              weekday: 'short',
+                              month: 'short',
+                              day: 'numeric'
                             })}
                           </div>
                         </div>
@@ -367,7 +374,7 @@ export const SwapMarketplace: React.FC<SwapMarketplaceProps> = ({
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200">
             <h4 className="text-xl font-bold text-zinc-900 mb-4">Post Swap Request</h4>
-            
+
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-zinc-700 mb-2">Select Your Shift to Swap</label>

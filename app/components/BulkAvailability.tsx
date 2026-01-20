@@ -52,7 +52,7 @@ export const BulkAvailability: React.FC<BulkAvailabilityProps> = ({ currentUser,
       // Add a date entry for each day in range
       for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
         const dateStr = d.toISOString().split('T')[0];
-        
+
         await addDoc(collection(db, 'user_availability'), {
           userId: currentUser.id,
           date: dateStr,
@@ -66,6 +66,16 @@ export const BulkAvailability: React.FC<BulkAvailabilityProps> = ({ currentUser,
       setShowModal(false);
       await loadUnavailableDates();
       onRefresh();
+
+      // Log activity
+      await import('@/lib/logger').then(m => m.logActivity(
+        currentUser.id,
+        currentUser.name,
+        'Unavailable',
+        `Blocked ${formData.startDate} to ${formData.endDate} (${formData.reason || 'No reason'})`,
+        'AVAILABILITY_CHANGE'
+      ));
+
     } catch (error) {
       console.error('Error blocking dates:', error);
       alert('Failed to block dates');
@@ -81,6 +91,16 @@ export const BulkAvailability: React.FC<BulkAvailabilityProps> = ({ currentUser,
       await deleteDoc(doc(db, 'user_availability', id));
       await loadUnavailableDates();
       onRefresh();
+
+      // Log activity
+      await import('@/lib/logger').then(m => m.logActivity(
+        currentUser.id,
+        currentUser.name,
+        'Available',
+        'Removed unavailability block',
+        'AVAILABILITY_CHANGE'
+      ));
+
     } catch (error) {
       console.error('Error removing block:', error);
     }
@@ -90,7 +110,7 @@ export const BulkAvailability: React.FC<BulkAvailabilityProps> = ({ currentUser,
     const today = new Date();
     const weekStart = new Date(today);
     weekStart.setDate(today.getDate() - today.getDay() + (today.getDay() === 0 ? -6 : 1));
-    
+
     const weekEnd = new Date(weekStart);
     weekEnd.setDate(weekStart.getDate() + 6);
 
@@ -108,7 +128,7 @@ export const BulkAvailability: React.FC<BulkAvailabilityProps> = ({ currentUser,
     nextWeek.setDate(nextWeek.getDate() + 7);
     const nextWeekStart = new Date(nextWeek);
     nextWeekStart.setDate(nextWeek.getDate() - nextWeek.getDay() + 1);
-    
+
     const nextWeekEnd = new Date(nextWeekStart);
     nextWeekEnd.setDate(nextWeekStart.getDate() + 6);
 
@@ -129,13 +149,8 @@ export const BulkAvailability: React.FC<BulkAvailabilityProps> = ({ currentUser,
 
   return (
     <div className="space-y-8">
-      <div>
-        <h3 className="text-2xl font-bold text-zinc-900 mb-2">Availability & Time Off</h3>
-        <p className="text-zinc-500 text-sm">Block dates when you're unavailable (vacation, sick leave, etc.)</p>
-      </div>
-
       {/* Quick Status Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-white border border-zinc-200 rounded-xl p-5">
           <div className="flex items-center justify-between mb-3">
             <span className="text-xs font-semibold text-zinc-600 uppercase">This Week</span>
@@ -170,7 +185,7 @@ export const BulkAvailability: React.FC<BulkAvailabilityProps> = ({ currentUser,
         className="w-full px-5 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
       >
         <Calendar size={18} />
-        Block Dates
+        Block Date Range
       </button>
 
       {/* Modal */}
@@ -178,7 +193,7 @@ export const BulkAvailability: React.FC<BulkAvailabilityProps> = ({ currentUser,
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
             <h4 className="text-xl font-bold text-zinc-900 mb-4">Block Unavailability</h4>
-            
+
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-zinc-700 mb-2">Start Date</label>

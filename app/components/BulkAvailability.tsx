@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { User, UserAvailability } from '@/lib/types';
-import { Calendar, AlertCircle, CheckCircle2, X } from 'lucide-react';
+import { Calendar, AlertCircle, CheckCircle2, X, Plus } from 'lucide-react';
 import { collection, addDoc, deleteDoc, doc, getDocs, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 
@@ -149,43 +149,49 @@ export const BulkAvailability: React.FC<BulkAvailabilityProps> = ({ currentUser,
 
   return (
     <div className="space-y-8">
-      {/* Quick Status Cards */}
+      {/* Premium Status Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white border border-zinc-200 rounded-xl p-5">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-semibold text-zinc-600 uppercase">This Week</span>
-            <Calendar className="text-zinc-400" size={18} />
+        <div className="bg-gradient-to-br from-indigo-50 to-white border border-indigo-100 rounded-[2rem] p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em]">This Week</span>
+            <div className="p-2 bg-indigo-100 rounded-lg">
+              <Calendar className="text-indigo-600" size={16} />
+            </div>
           </div>
-          <div className="text-2xl font-black text-zinc-900">{quickAvailability.daysBlocked} days</div>
-          <div className="text-xs text-zinc-500 mt-2">unavailable</div>
+          <div className="text-3xl font-black text-zinc-900 tracking-tight">{quickAvailability.daysBlocked}</div>
+          <div className="text-xs font-bold text-zinc-500 mt-1 uppercase tracking-wider">Days Blocked</div>
         </div>
 
-        <div className="bg-white border border-zinc-200 rounded-xl p-5">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-semibold text-zinc-600 uppercase">Next Week</span>
-            <Calendar className="text-zinc-400" size={18} />
+        <div className="bg-gradient-to-br from-blue-50 to-white border border-blue-100 rounded-[2rem] p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em]">Next Week</span>
+            <div className="p-2 bg-blue-100 rounded-lg">
+              <Calendar className="text-blue-600" size={16} />
+            </div>
           </div>
-          <div className="text-2xl font-black text-zinc-900">{nextWeekUnavailable()} days</div>
-          <div className="text-xs text-zinc-500 mt-2">unavailable</div>
+          <div className="text-3xl font-black text-zinc-900 tracking-tight">{nextWeekUnavailable()}</div>
+          <div className="text-xs font-bold text-zinc-500 mt-1 uppercase tracking-wider">Upcoming</div>
         </div>
 
-        <div className="bg-white border border-zinc-200 rounded-xl p-5">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-semibold text-zinc-600 uppercase">Total Blocks</span>
-            <AlertCircle className="text-amber-600" size={18} />
+        <div className="bg-gradient-to-br from-amber-50 to-white border border-amber-100 rounded-[2rem] p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-[10px] font-black text-amber-600 uppercase tracking-[0.2em]">All Requests</span>
+            <div className="p-2 bg-amber-100 rounded-lg">
+              <AlertCircle className="text-amber-600" size={16} />
+            </div>
           </div>
-          <div className="text-2xl font-black text-amber-600">{unavailableDates.length}</div>
-          <div className="text-xs text-zinc-500 mt-2">dates blocked</div>
+          <div className="text-3xl font-black text-amber-600 tracking-tight">{unavailableDates.length}</div>
+          <div className="text-xs font-bold text-zinc-500 mt-1 uppercase tracking-wider">Total Dates</div>
         </div>
       </div>
 
-      {/* Action Button */}
+      {/* Action Button - Large & Ergonomic */}
       <button
         onClick={() => setShowModal(true)}
-        className="w-full px-5 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+        className="w-full py-5 bg-zinc-900 text-white rounded-[2rem] font-black hover:bg-black transition-all shadow-xl active:scale-[0.98] flex items-center justify-center gap-3"
       >
-        <Calendar size={18} />
-        Block Date Range
+        <Plus size={24} />
+        Block Dates
       </button>
 
       {/* Modal */}

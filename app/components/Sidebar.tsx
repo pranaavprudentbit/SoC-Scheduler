@@ -60,22 +60,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <>
-      <nav className="fixed top-0 left-0 right-0 z-50 h-16 sm:h-18 flex items-center justify-between px-4 sm:px-6 bg-white/80 backdrop-blur-xl border-b border-zinc-200 shadow-sm">
-        {/* Brand */}
+      <nav className="fixed top-0 left-0 right-0 z-50 h-16 sm:h-18 flex items-center justify-between px-4 sm:px-6 bg-white/80 backdrop-blur-xl border-b border-zinc-200">
         {/* Brand */}
         <div className="flex items-center gap-4 flex-shrink-0">
           <div className="flex items-center justify-center bg-zinc-900 px-3 py-2 rounded-lg shadow-sm">
             <img
               src="/textlogo-light.webp"
               alt="SoC Scheduler"
-              className="h-8 sm:h-10 w-auto object-contain"
+              className="h-8 sm:h-9 w-auto object-contain"
             />
           </div>
-          <div className="h-10 w-px bg-black hidden sm:block"></div>
+          <div className="h-8 w-px bg-zinc-200 hidden sm:block"></div>
         </div>
 
-        {/* Desktop Navigation Links */}
-        <div className="hidden lg:flex items-center justify-center gap-1 overflow-x-auto flex-1 mx-4 scrollbar-hide">
+        {/* Desktop & Tablet Navigation - Hidden on Small Mobile */}
+        <div className="hidden sm:flex items-center justify-center gap-1 overflow-x-auto flex-1 mx-4 scrollbar-hide">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isAdminItem = item.id === 'admin';
@@ -83,13 +82,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <button
                 key={item.id}
                 onClick={() => handleNavClick(item.id)}
-                className={`px-2 py-1.5 text-xs transition-all rounded-lg font-medium flex items-center gap-1.5 flex-shrink-0 ${isAdminItem
+                className={`px-3 py-1.5 text-xs transition-all rounded-lg font-semibold flex items-center gap-1.5 flex-shrink-0 ${isAdminItem
                   ? activeTab === item.id
-                    ? 'text-white bg-gradient-to-r from-red-600 to-red-700 shadow-md ring-2 ring-red-200'
-                    : 'text-red-600 bg-red-50 hover:bg-red-100 ring-1 ring-red-200'
+                    ? 'text-white bg-red-600 shadow-sm'
+                    : 'text-red-600 bg-red-50 hover:bg-red-100'
                   : activeTab === item.id
-                    ? 'text-white bg-gradient-to-r from-blue-600 to-blue-700 shadow-sm'
-                    : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100'
+                    ? 'text-white bg-blue-600 shadow-sm'
+                    : 'text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100'
                   }`}
               >
                 <Icon size={14} className="shrink-0" />
@@ -101,79 +100,62 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         {/* User & Actions */}
         <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-          <div className="h-4 w-px bg-zinc-200 hidden sm:block"></div>
-
           <button
             onClick={handleLogout}
-            className="hidden sm:flex text-zinc-400 hover:text-red-600 transition-colors p-2 hover:bg-red-50 rounded-lg"
+            className="flex text-zinc-400 hover:text-red-600 transition-colors p-2 hover:bg-red-50 rounded-lg"
             title="Sign Out"
           >
             <LogOut size={18} />
           </button>
 
-          {/* Mobile Menu Button */}
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="lg:hidden text-zinc-600 hover:text-zinc-900 transition-colors p-2 hover:bg-zinc-100 rounded-lg"
-          >
-            {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
-          </button>
-
-          {/* User Avatar - Desktop */}
-          <div className="hidden sm:flex items-center gap-2 pl-2">
+          {/* User Avatar */}
+          <div className="flex items-center gap-2 pl-2">
             <img
               src={currentUser.avatar}
               alt={currentUser.name}
-              className="w-9 h-9 rounded-full ring-2 ring-blue-100"
+              className="w-8 h-8 sm:w-9 sm:h-9 rounded-full ring-2 ring-blue-50 object-cover"
             />
           </div>
         </div>
       </nav>
 
-      {/* Mobile Menu Overlay */}
-      {mobileMenuOpen && (
-        <div className="fixed inset-0 z-40 lg:hidden">
-          <div
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-            onClick={() => setMobileMenuOpen(false)}
-          />
-          <div className="absolute top-16 sm:top-18 left-0 right-0 bg-white border-b border-zinc-200 shadow-2xl animate-in slide-in-from-top duration-200">
-            <div className="px-4 py-4 space-y-1">
-              {navItems.map((item) => {
-                const Icon = item.icon;
-                const isAdminItem = item.id === 'admin';
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => handleNavClick(item.id)}
-                    className={`w-full px-4 py-3 text-sm transition-all rounded-xl font-semibold flex items-center gap-3 ${isAdminItem
-                      ? activeTab === item.id
-                        ? 'text-white bg-gradient-to-r from-red-600 to-red-700 shadow-lg ring-2 ring-red-200'
-                        : 'text-red-600 bg-red-50 hover:bg-red-100 ring-1 ring-red-200'
-                      : activeTab === item.id
-                        ? 'text-white bg-gradient-to-r from-blue-600 to-blue-700 shadow-lg'
-                        : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100'
-                      }`}
-                  >
-                    <Icon size={18} />
-                    {item.label}
-                  </button>
-                );
-              })}
+      {/* Mobile Bottom Navigation - Only visible on smallest screens */}
+      <div className="sm:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-xl border-t border-zinc-200 pb-safe shadow-[0_-4px_16px_rgba(0,0,0,0.05)]">
+        <div className="flex items-center justify-around h-16 px-2">
+          {navItems.filter(item => item.id !== 'admin').map((item) => {
+            const Icon = item.icon;
+            const isActive = activeTab === item.id;
+            const isSpecial = item.id === 'admin';
 
-              <div className="h-px bg-zinc-200 my-2"></div>
-
+            return (
               <button
-                onClick={handleLogout}
-                className="w-full px-4 py-3 text-sm transition-all rounded-xl font-semibold flex items-center gap-3 text-red-600 hover:bg-red-50"
+                key={item.id}
+                onClick={() => handleNavClick(item.id)}
+                className="flex flex-col items-center justify-center w-full relative group"
               >
-                <LogOut size={18} />
-                Sign Out
+                <div className={`p-1.5 rounded-xl transition-all duration-300 ${isActive
+                  ? isSpecial ? 'bg-red-50 text-red-600 scale-110' : 'bg-blue-50 text-blue-600 scale-110'
+                  : 'text-zinc-400 group-hover:text-zinc-600'
+                  }`}>
+                  <Icon size={24} strokeWidth={isActive ? 2.5 : 2} />
+                </div>
+                <span className={`text-[10px] font-bold mt-1 tracking-tight transition-colors duration-300 ${isActive
+                  ? isSpecial ? 'text-red-600' : 'text-blue-600'
+                  : 'text-zinc-500'
+                  }`}>
+                  {item.label}
+                </span>
+
+                {/* Active Indicator Dot */}
+                {isActive && (
+                  <div className={`absolute -top-1 w-1 h-1 rounded-full ${isSpecial ? 'bg-red-600' : 'bg-blue-600'} animate-pulse`} />
+                )}
               </button>
-            </div>
-          </div>
+            );
+          })}
         </div>
-      )}
+      </div>
     </>
   );
 };
+

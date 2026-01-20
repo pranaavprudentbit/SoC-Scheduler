@@ -46,7 +46,7 @@ export const ClockInOut: React.FC<ClockInOutProps> = ({ shifts, currentUser, upc
     const today = new Date();
     const weekStart = new Date(today);
     weekStart.setDate(today.getDate() - today.getDay());
-    
+
     const userShifts = shifts.filter(
       s => s.userId === currentUser.id && new Date(s.date) >= weekStart
     );
@@ -125,11 +125,11 @@ export const ClockInOut: React.FC<ClockInOutProps> = ({ shifts, currentUser, upc
     const now = new Date();
     const clockIn = new Date(clockInTime);
     const elapsed = Math.floor((now.getTime() - clockIn.getTime()) / 1000);
-    
+
     const hours = Math.floor(elapsed / 3600);
     const minutes = Math.floor((elapsed % 3600) / 60);
     const seconds = elapsed % 60;
-    
+
     return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
   };
 
@@ -137,7 +137,7 @@ export const ClockInOut: React.FC<ClockInOutProps> = ({ shifts, currentUser, upc
 
   useEffect(() => {
     if (!isClockedIn) return;
-    
+
     const interval = setInterval(() => {
       setElapsedTime(getElapsedTime());
     }, 1000);
@@ -152,82 +152,82 @@ export const ClockInOut: React.FC<ClockInOutProps> = ({ shifts, currentUser, upc
         <p className="text-zinc-500 text-sm">Clock in/out for your shifts and track hours</p>
       </div>
 
-      {/* Clock In/Out Card */}
-      <div className={`rounded-2xl p-8 text-white shadow-xl ${
-        isClockedIn 
-          ? 'bg-gradient-to-br from-green-600 to-emerald-700' 
-          : 'bg-gradient-to-br from-zinc-600 to-zinc-700'
-      }`}>
-        <div className="flex items-start justify-between mb-6">
-          <div>
-            <div className="text-sm font-semibold opacity-90 uppercase tracking-wider mb-2">
-              {isClockedIn ? 'Clocked In' : 'Clocked Out'}
+      {/* Clock In/Out Card - Highly Optimized for Mobile */}
+      <div className={`rounded-3xl p-6 sm:p-8 text-white shadow-2xl relative overflow-hidden ${isClockedIn
+        ? 'bg-gradient-to-br from-emerald-600 via-emerald-700 to-green-800'
+        : 'bg-gradient-to-br from-zinc-700 via-zinc-800 to-black'
+        }`}>
+
+        {/* Subtle background decoration */}
+        <div className="absolute top-0 right-0 -mr-8 -mt-8 w-32 h-32 bg-white/10 rounded-full blur-2xl" />
+        <div className="absolute bottom-0 left-0 -ml-8 -mb-8 w-32 h-32 bg-black/10 rounded-full blur-2xl" />
+
+        <div className="relative z-10 flex flex-col items-center text-center">
+          <div className="text-xs font-black opacity-80 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+            <span className={`w-2 h-2 rounded-full animate-pulse ${isClockedIn ? 'bg-green-300' : 'bg-zinc-400'}`} />
+            {isClockedIn ? 'System Active' : 'System Idle'}
+          </div>
+
+          <div className="text-6xl sm:text-7xl font-black font-mono tracking-tighter mb-2 transition-all duration-500 tabular-nums">
+            {isClockedIn ? elapsedTime : '00:00:00'}
+          </div>
+
+          <div className="h-1 w-12 bg-white/20 rounded-full mb-6" />
+
+          {isClockedIn && clockInTime ? (
+            <div className="text-sm font-medium opacity-90 mb-8 bg-black/20 px-4 py-2 rounded-full backdrop-blur-md">
+              Started at <span className="font-bold">{new Date(clockInTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
             </div>
-            <div className="text-5xl font-black font-mono mb-2">
-              {isClockedIn ? elapsedTime : '00:00:00'}
+          ) : (
+            <div className="text-sm font-medium opacity-75 mb-8">
+              {upcomingShift ? `Next: ${upcomingShift.type} Shift` : 'No upcoming shifts'}
             </div>
-            {isClockedIn && clockInTime && (
-              <div className="text-sm opacity-75">
-                Started at {new Date(clockInTime).toLocaleTimeString()}
-              </div>
+          )}
+
+          <div className="w-full flex flex-col sm:flex-row gap-4">
+            {!isClockedIn ? (
+              <button
+                onClick={handleClockIn}
+                disabled={loading || !upcomingShift}
+                className="w-full py-5 bg-white text-green-700 rounded-2xl text-lg font-black hover:bg-green-50 disabled:opacity-50 transition-all flex items-center justify-center gap-3 shadow-[0_8px_30px_rgb(0,0,0,0.12)] active:scale-95"
+              >
+                <Play size={24} fill="currentColor" />
+                Clock In
+              </button>
+            ) : (
+              <button
+                onClick={handleClockOut}
+                disabled={loading}
+                className="w-full py-5 bg-white text-red-600 rounded-2xl text-lg font-black hover:bg-red-50 disabled:opacity-50 transition-all flex items-center justify-center gap-3 shadow-[0_8px_30px_rgb(0,0,0,0.12)] active:scale-95"
+              >
+                <Square size={24} fill="currentColor" />
+                Clock Out
+              </button>
             )}
           </div>
-          <Clock className="opacity-20" size={64} />
-        </div>
-
-        {upcomingShift && (
-          <div className="text-sm opacity-90 mb-4">
-            {upcomingShift.type} Shift • {upcomingShift.lunchStart}-{upcomingShift.lunchEnd} Lunch
-          </div>
-        )}
-
-        <div className="flex gap-3">
-          {!isClockedIn ? (
-            <button
-              onClick={handleClockIn}
-              disabled={loading || !upcomingShift}
-              className="flex-1 px-6 py-3 bg-white text-green-600 rounded-xl text-sm font-bold hover:bg-green-50 disabled:opacity-50 transition-all flex items-center justify-center gap-2 shadow-lg"
-            >
-              <Play size={18} />
-              Clock In
-            </button>
-          ) : (
-            <button
-              onClick={handleClockOut}
-              disabled={loading}
-              className="flex-1 px-6 py-3 bg-white text-red-600 rounded-xl text-sm font-bold hover:bg-red-50 disabled:opacity-50 transition-all flex items-center justify-center gap-2 shadow-lg"
-            >
-              <Square size={18} />
-              Clock Out
-            </button>
-          )}
         </div>
       </div>
 
-      {/* Weekly Stats */}
-      <div className="grid grid-cols-3 gap-4">
-        <div className="bg-white border border-zinc-200 rounded-xl p-4">
-          <div className="text-xs text-zinc-600 uppercase font-semibold mb-2">This Week</div>
-          <div className="text-2xl font-black text-blue-600">{weekStats.hours}h</div>
-          <div className="text-xs text-zinc-500 mt-1">worked</div>
+      {/* Weekly Stats - Responsive Grid */}
+      <div className="grid grid-cols-1 xs:grid-cols-3 gap-3">
+        <div className="bg-white border border-zinc-200 rounded-2xl p-4 shadow-sm">
+          <div className="text-[10px] text-zinc-500 uppercase font-black tracking-widest mb-1">Weekly Total</div>
+          <div className="text-2xl font-black text-blue-600">{weekStats.hours}<span className="text-sm ml-1 font-bold text-zinc-400 text-blue-300">h</span></div>
         </div>
 
-        <div className={`rounded-xl p-4 ${
-          weekStats.overtime > 0 
-            ? 'bg-amber-50 border border-amber-200' 
-            : 'bg-white border border-zinc-200'
-        }`}>
-          <div className="text-xs text-zinc-600 uppercase font-semibold mb-2">Overtime</div>
-          <div className={`text-2xl font-black ${weekStats.overtime > 0 ? 'text-amber-600' : 'text-zinc-400'}`}>
-            {weekStats.overtime > 0 ? `+${weekStats.overtime}h` : '0h'}
+        <div className={`rounded-2xl p-4 shadow-sm border ${weekStats.overtime > 0
+          ? 'bg-amber-50 border-amber-200'
+          : 'bg-white border-zinc-200'
+          }`}>
+          <div className="text-[10px] text-zinc-500 uppercase font-black tracking-widest mb-1">Overtime</div>
+          <div className={`text-2xl font-black ${weekStats.overtime > 0 ? 'text-amber-600' : 'text-zinc-300'}`}>
+            {weekStats.overtime > 0 ? `+${weekStats.overtime}` : '0'}<span className="text-sm ml-1 font-bold">h</span>
           </div>
-          <div className="text-xs text-zinc-500 mt-1">{weekStats.overtime > 0 ? 'over 40h' : 'on track'}</div>
         </div>
 
-        <div className="bg-white border border-zinc-200 rounded-xl p-4">
-          <div className="text-xs text-zinc-600 uppercase font-semibold mb-2">Shifts</div>
+        <div className="bg-white border border-zinc-200 rounded-2xl p-4 shadow-sm">
+          <div className="text-[10px] text-zinc-500 uppercase font-black tracking-widest mb-1">Days Active</div>
           <div className="text-2xl font-black text-emerald-600">{weekStats.shifts}</div>
-          <div className="text-xs text-zinc-500 mt-1">this week</div>
         </div>
       </div>
 
@@ -238,7 +238,7 @@ export const ClockInOut: React.FC<ClockInOutProps> = ({ shifts, currentUser, upc
           {clockEntries.slice(-10).reverse().map(entry => {
             const clockIn = new Date(entry.clockInTime);
             const clockOut = entry.clockOutTime ? new Date(entry.clockOutTime) : null;
-            
+
             return (
               <div key={entry.id} className="bg-white border border-zinc-200 p-3 rounded-lg">
                 <div className="flex items-center justify-between">

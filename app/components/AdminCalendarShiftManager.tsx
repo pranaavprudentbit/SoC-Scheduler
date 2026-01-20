@@ -12,9 +12,9 @@ interface AdminCalendarShiftManagerProps {
   onRefresh: () => void;
 }
 
-export const AdminCalendarShiftManager: React.FC<AdminCalendarShiftManagerProps> = ({ 
-  users, 
-  shifts, 
+export const AdminCalendarShiftManager: React.FC<AdminCalendarShiftManagerProps> = ({
+  users,
+  shifts,
   onRefresh
 }) => {
   const [currentWeekStart, setCurrentWeekStart] = useState(() => {
@@ -149,7 +149,7 @@ export const AdminCalendarShiftManager: React.FC<AdminCalendarShiftManagerProps>
           <div>
             <h4 className="text-sm font-semibold text-blue-900 mb-1">Smart Shift Protection</h4>
             <p className="text-xs text-blue-700">
-              Shifts you create or edit manually are marked as 🔒 Protected. The AI scheduler will respect these shifts and won't override them. 
+              Shifts you create or edit manually are marked as 🔒 Protected. The AI scheduler will respect these shifts and won't override them.
               Only you can modify or delete protected shifts.
             </p>
           </div>
@@ -165,7 +165,7 @@ export const AdminCalendarShiftManager: React.FC<AdminCalendarShiftManagerProps>
           </h3>
           <p className="text-zinc-500 text-sm mt-1">Click on any slot to assign or edit shifts</p>
         </div>
-        
+
         <div className="flex items-center gap-2">
           <button
             onClick={() => navigateWeek('prev')}
@@ -174,13 +174,13 @@ export const AdminCalendarShiftManager: React.FC<AdminCalendarShiftManagerProps>
           >
             <ChevronLeft size={20} className="text-zinc-600" />
           </button>
-          
+
           <div className="px-4 py-2 bg-blue-50 border border-blue-200 rounded-lg">
             <span className="text-sm font-semibold text-blue-900">
               {weekDates[0].toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {weekDates[6].toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
             </span>
           </div>
-          
+
           <button
             onClick={() => navigateWeek('next')}
             className="p-2 hover:bg-zinc-100 rounded-lg transition-colors"
@@ -191,104 +191,106 @@ export const AdminCalendarShiftManager: React.FC<AdminCalendarShiftManagerProps>
         </div>
       </div>
 
-      {/* Calendar Grid */}
-      <div className="bg-white border border-zinc-200 rounded-2xl shadow-sm overflow-hidden">
-        {/* Header Row - Days */}
-        <div className="grid grid-cols-8 border-b border-zinc-200 bg-zinc-50">
-          <div className="p-3 sm:p-4 text-xs font-semibold text-zinc-500 uppercase tracking-wider">
-            Shift Type
-          </div>
-          {weekDates.map((date, idx) => {
-            const isToday = date.toDateString() === new Date().toDateString();
-            return (
-              <div
-                key={idx}
-                className={`p-2 sm:p-4 text-center border-l border-zinc-200 ${isToday ? 'bg-blue-50' : ''}`}
-              >
-                <div className={`text-xs font-semibold ${isToday ? 'text-blue-600' : 'text-zinc-500'} uppercase`}>
-                  {date.toLocaleDateString('en-US', { weekday: 'short' })}
-                </div>
-                <div className={`text-sm sm:text-lg font-bold mt-1 ${isToday ? 'text-blue-600' : 'text-zinc-900'}`}>
-                  {date.getDate()}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Shift Rows */}
-        {[ShiftType.MORNING, ShiftType.EVENING, ShiftType.NIGHT].map((shiftType) => (
-          <div key={shiftType} className="grid grid-cols-8 border-b border-zinc-200 last:border-b-0">
-            {/* Shift Type Label */}
-            <div className="p-3 sm:p-4 flex items-center gap-2 border-r border-zinc-200 bg-zinc-50">
-              {getShiftIcon(shiftType)}
-              <span className="text-sm font-semibold text-zinc-900 hidden sm:inline">{shiftType}</span>
-              <span className="text-xs font-semibold text-zinc-900 sm:hidden">{shiftType.slice(0, 3)}</span>
+      {/* Calendar Grid - Swipeable on mobile */}
+      <div className="bg-white border border-zinc-200 rounded-2xl shadow-sm overflow-x-auto scrollbar-hide">
+        <div className="min-w-[800px]">
+          {/* Header Row - Days */}
+          <div className="grid grid-cols-8 border-b border-zinc-200 bg-zinc-50">
+            <div className="p-3 sm:p-4 text-xs font-semibold text-zinc-500 uppercase tracking-wider">
+              Shift Type
             </div>
-
-            {/* Shift Cells */}
             {weekDates.map((date, idx) => {
-              const shift = getShiftForDateAndType(date, shiftType);
-              const user = shift ? getUserById(shift.userId) : null;
               const isToday = date.toDateString() === new Date().toDateString();
-
               return (
                 <div
                   key={idx}
-                  className={`p-2 border-l border-zinc-200 min-h-[80px] sm:min-h-[100px] ${isToday ? 'bg-blue-50/30' : ''}`}
+                  className={`p-2 sm:p-4 text-center border-l border-zinc-200 ${isToday ? 'bg-blue-50' : ''}`}
                 >
-                  {shift && user ? (
-                    <div className={`h-full rounded-lg border p-2 ${getShiftColor(shiftType)} group relative transition-all hover:shadow-md`}>
-                      <div className="flex flex-col h-full justify-between">
-                        <div className="flex items-start gap-1.5">
-                          <img
-                            src={user.avatar}
-                            alt={user.name}
-                            className="w-6 h-6 sm:w-8 sm:h-8 rounded-full border-2 border-white shadow-sm"
-                          />
-                          <div className="flex-1 min-w-0">
-                            <div className={`text-xs sm:text-sm font-semibold truncate ${shiftType === ShiftType.NIGHT ? 'text-white' : 'text-zinc-900'}`}>
-                              {user.name.split(' ')[0]}
-                            </div>
-                            {shift.manuallyCreated && (
-                              <div className={`text-[10px] font-medium ${shiftType === ShiftType.NIGHT ? 'text-blue-300' : 'text-blue-600'}`}>
-                                🔒 Protected
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                        
-                        <div className="flex gap-1 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button
-                            onClick={() => handleAssignShift(date, shiftType)}
-                            className={`p-1 rounded ${shiftType === ShiftType.NIGHT ? 'bg-slate-600 hover:bg-slate-500' : 'bg-white hover:bg-zinc-50'} shadow-sm transition-colors`}
-                            title="Edit"
-                          >
-                            <Edit2 size={12} className={shiftType === ShiftType.NIGHT ? 'text-white' : 'text-blue-600'} />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteShift(shift)}
-                            className={`p-1 rounded ${shiftType === ShiftType.NIGHT ? 'bg-slate-600 hover:bg-slate-500' : 'bg-white hover:bg-zinc-50'} shadow-sm transition-colors`}
-                            title="Delete"
-                          >
-                            <Trash2 size={12} className={shiftType === ShiftType.NIGHT ? 'text-white' : 'text-red-600'} />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => handleAssignShift(date, shiftType)}
-                      className="w-full h-full rounded-lg border-2 border-dashed border-zinc-200 hover:border-blue-400 hover:bg-blue-50 transition-all flex items-center justify-center group"
-                    >
-                      <Plus size={16} className="text-zinc-400 group-hover:text-blue-600 transition-colors" />
-                    </button>
-                  )}
+                  <div className={`text-xs font-semibold ${isToday ? 'text-blue-600' : 'text-zinc-500'} uppercase`}>
+                    {date.toLocaleDateString('en-US', { weekday: 'short' })}
+                  </div>
+                  <div className={`text-sm sm:text-lg font-bold mt-1 ${isToday ? 'text-blue-600' : 'text-zinc-900'}`}>
+                    {date.getDate()}
+                  </div>
                 </div>
               );
             })}
           </div>
-        ))}
+
+          {/* Shift Rows */}
+          {[ShiftType.MORNING, ShiftType.EVENING, ShiftType.NIGHT].map((shiftType) => (
+            <div key={shiftType} className="grid grid-cols-8 border-b border-zinc-200 last:border-b-0">
+              {/* Shift Type Label */}
+              <div className="p-3 sm:p-4 flex items-center gap-2 border-r border-zinc-200 bg-zinc-50">
+                {getShiftIcon(shiftType)}
+                <span className="text-sm font-semibold text-zinc-900 hidden sm:inline">{shiftType}</span>
+                <span className="text-xs font-semibold text-zinc-900 sm:hidden">{shiftType.slice(0, 3)}</span>
+              </div>
+
+              {/* Shift Cells */}
+              {weekDates.map((date, idx) => {
+                const shift = getShiftForDateAndType(date, shiftType);
+                const user = shift ? getUserById(shift.userId) : null;
+                const isToday = date.toDateString() === new Date().toDateString();
+
+                return (
+                  <div
+                    key={idx}
+                    className={`p-2 border-l border-zinc-200 min-h-[80px] sm:min-h-[100px] ${isToday ? 'bg-blue-50/30' : ''}`}
+                  >
+                    {shift && user ? (
+                      <div className={`h-full rounded-lg border p-2 ${getShiftColor(shiftType)} group relative transition-all hover:shadow-md`}>
+                        <div className="flex flex-col h-full justify-between">
+                          <div className="flex items-start gap-1.5">
+                            <img
+                              src={user.avatar}
+                              alt={user.name}
+                              className="w-6 h-6 sm:w-8 sm:h-8 rounded-full border-2 border-white shadow-sm"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className={`text-xs sm:text-sm font-semibold truncate ${shiftType === ShiftType.NIGHT ? 'text-white' : 'text-zinc-900'}`}>
+                                {user.name.split(' ')[0]}
+                              </div>
+                              {shift.manuallyCreated && (
+                                <div className={`text-[10px] font-medium ${shiftType === ShiftType.NIGHT ? 'text-blue-300' : 'text-blue-600'}`}>
+                                  🔒 Protected
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="flex gap-1 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button
+                              onClick={() => handleAssignShift(date, shiftType)}
+                              className={`p-1 rounded ${shiftType === ShiftType.NIGHT ? 'bg-slate-600 hover:bg-slate-500' : 'bg-white hover:bg-zinc-50'} shadow-sm transition-colors`}
+                              title="Edit"
+                            >
+                              <Edit2 size={12} className={shiftType === ShiftType.NIGHT ? 'text-white' : 'text-blue-600'} />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteShift(shift)}
+                              className={`p-1 rounded ${shiftType === ShiftType.NIGHT ? 'bg-slate-600 hover:bg-slate-500' : 'bg-white hover:bg-zinc-50'} shadow-sm transition-colors`}
+                              title="Delete"
+                            >
+                              <Trash2 size={12} className={shiftType === ShiftType.NIGHT ? 'text-white' : 'text-red-600'} />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => handleAssignShift(date, shiftType)}
+                        className="w-full h-full rounded-lg border-2 border-dashed border-zinc-200 hover:border-blue-400 hover:bg-blue-50 transition-all flex items-center justify-center group"
+                      >
+                        <Plus size={16} className="text-zinc-400 group-hover:text-blue-600 transition-colors" />
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Edit Modal */}
@@ -298,7 +300,7 @@ export const AdminCalendarShiftManager: React.FC<AdminCalendarShiftManagerProps>
             <h4 className="text-xl font-bold text-zinc-900 mb-4">
               {editingShift.shift ? 'Edit' : 'Assign'} {editingShift.type} Shift
             </h4>
-            
+
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-zinc-700 mb-2">

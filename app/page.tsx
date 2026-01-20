@@ -8,7 +8,7 @@ import { MonthCalendarView } from './components/MonthCalendarView';
 import { AdminPanel } from './components/AdminPanel';
 import { SwapMarketplace } from './components/SwapMarketplace';
 import { PreferencesPanel } from './components/PreferencesPanel';
-import { ClockInOut } from './components/ClockInOut';
+import { Calendar, Clock, RefreshCw } from 'lucide-react';
 import { User, Role, Shift, SwapRequest, LeaveRequest, ShiftType } from '@/lib/types';
 import { auth, db } from '@/lib/firebase/config';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -22,6 +22,7 @@ export default function Home() {
   const [swaps, setSwaps] = useState<SwapRequest[]>([]);
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
   const [loading, setLoading] = useState(true);
+  const [scheduleDate, setScheduleDate] = useState(new Date());
 
   const router = useRouter();
 
@@ -221,44 +222,76 @@ export default function Home() {
     switch (activeTab) {
       case 'dashboard':
         return (
-          <div className="animate-in fade-in duration-300">
-            <header className="mb-8 lg:mb-12">
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-zinc-900 mb-2">Welcome back, {currentUser.name.split(' ')[0]} 👋</h1>
-              <p className="text-sm sm:text-base text-zinc-500">Work 5 days, rest 2 days • Only 3 people work per day</p>
+          <div className="animate-in fade-in duration-300 space-y-8">
+            <header>
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-zinc-900 mb-1 tracking-tight">Welcome back, {currentUser.name.split(' ')[0]} 👋</h1>
+              <p className="text-sm font-medium text-zinc-500">You're on top of your schedule</p>
             </header>
 
-            {/* Enhanced Stats Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 mb-10 lg:mb-14">
-              <div className="group relative bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-5 sm:p-6 shadow-lg hover:shadow-2xl transition-all overflow-hidden transform hover:-translate-y-1">
-                <div className="absolute top-0 right-0 w-24 sm:w-32 h-24 sm:h-32 bg-white/10 rounded-full -mr-12 sm:-mr-16 -mt-12 sm:-mt-16"></div>
-                <span className="relative block text-xs font-bold text-blue-100 uppercase tracking-wider mb-3">Next Shift</span>
-                <div className="relative flex flex-wrap items-baseline gap-2 sm:gap-3">
-                  <span className="text-2xl sm:text-3xl font-bold text-white">Tomorrow</span>
-                  <span className="text-base sm:text-lg text-blue-100 font-semibold">09:00</span>
+            {/* Premium Stats Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-10">
+              <div className="group relative bg-gradient-to-br from-indigo-600 via-blue-600 to-blue-700 rounded-[2rem] p-6 shadow-[0_20px_50px_rgba(59,130,246,0.2)] hover:shadow-blue-500/30 transition-all overflow-hidden border border-white/10">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-2xl group-hover:bg-white/20 transition-all"></div>
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="p-2 bg-white/20 rounded-lg backdrop-blur-md">
+                    <Calendar className="text-white" size={18} />
+                  </div>
+                  <span className="text-xs font-black text-blue-100 uppercase tracking-[0.2em]">Next Shift</span>
+                </div>
+                <div className="flex flex-wrap items-baseline gap-2">
+                  <span className="text-3xl font-black text-white tracking-tight">Tomorrow</span>
+                </div>
+                <div className="text-sm text-blue-100 mt-2 font-bold bg-white/10 w-fit px-3 py-1 rounded-full backdrop-blur-sm">
+                  09:00 - 18:00
                 </div>
               </div>
-              <div className="group relative bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl p-5 sm:p-6 shadow-lg hover:shadow-2xl transition-all overflow-hidden transform hover:-translate-y-1">
-                <div className="absolute top-0 right-0 w-24 sm:w-32 h-24 sm:h-32 bg-white/10 rounded-full -mr-12 sm:-mr-16 -mt-12 sm:-mt-16"></div>
-                <span className="relative block text-xs font-bold text-emerald-100 uppercase tracking-wider mb-3">Weekly Load</span>
-                <div className="relative flex flex-wrap items-baseline gap-2 sm:gap-3">
-                  <span className="text-2xl sm:text-3xl font-bold text-white">{shifts.filter(s => s.userId === currentUser.id).length * 8}</span>
-                  <span className="text-base sm:text-lg text-emerald-100 font-semibold">/ 40 hrs</span>
+
+              <div className="group relative bg-gradient-to-br from-emerald-500 via-teal-600 to-emerald-700 rounded-[2rem] p-6 shadow-[0_20px_50px_rgba(16,185,129,0.2)] hover:shadow-emerald-500/30 transition-all overflow-hidden border border-white/10">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-2xl group-hover:bg-white/20 transition-all"></div>
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="p-2 bg-white/20 rounded-lg backdrop-blur-md">
+                    <Clock className="text-white" size={18} />
+                  </div>
+                  <span className="text-xs font-black text-emerald-100 uppercase tracking-[0.2em]">Weekly Hours</span>
                 </div>
-                <div className="relative text-xs text-emerald-100 mt-2 font-medium">
-                  {shifts.filter(s => s.userId === currentUser.id && new Date(s.date) >= new Date()).length} shifts this week
+                <div className="flex flex-wrap items-baseline gap-2">
+                  <span className="text-3xl font-black text-white tracking-tight">{shifts.filter(s => s.userId === currentUser.id).length * 8}</span>
+                  <span className="text-lg text-emerald-100 font-bold">/ 40h</span>
+                </div>
+                <div className="mt-4 h-1.5 w-full bg-black/10 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-white rounded-full transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(255,255,255,0.5)]"
+                    style={{ width: `${Math.min((shifts.filter(s => s.userId === currentUser.id).length * 8 / 40) * 100, 100)}%` }}
+                  />
                 </div>
               </div>
-              <div className="group relative bg-gradient-to-br from-amber-500 to-amber-600 rounded-2xl p-5 sm:p-6 shadow-lg hover:shadow-2xl transition-all overflow-hidden transform hover:-translate-y-1 sm:col-span-2 lg:col-span-1">
-                <div className="absolute top-0 right-0 w-24 sm:w-32 h-24 sm:h-32 bg-white/10 rounded-full -mr-12 sm:-mr-16 -mt-12 sm:-mt-16"></div>
-                <span className="relative block text-xs font-bold text-amber-100 uppercase tracking-wider mb-3">Swaps</span>
-                <div className="relative flex flex-wrap items-baseline gap-2 sm:gap-3">
-                  <span className="text-2xl sm:text-3xl font-bold text-white">{swaps.filter(s => s.status === 'PENDING').length}</span>
-                  <span className="text-base sm:text-lg text-amber-100 font-semibold">pending</span>
+
+              <div className="group relative bg-gradient-to-br from-amber-500 to-orange-600 rounded-[2rem] p-6 shadow-[0_20px_50px_rgba(245,158,11,0.2)] hover:shadow-amber-500/30 transition-all overflow-hidden border border-white/10 sm:col-span-2 lg:col-span-1">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-2xl group-hover:bg-white/20 transition-all"></div>
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="p-2 bg-white/20 rounded-lg backdrop-blur-md">
+                    <RefreshCw className="text-white" size={18} />
+                  </div>
+                  <span className="text-xs font-black text-amber-100 uppercase tracking-[0.2em]">Open Swaps</span>
                 </div>
+                <div className="flex flex-wrap items-baseline gap-2">
+                  <span className="text-3xl font-black text-white tracking-tight">{swaps.filter(s => s.status === 'PENDING').length}</span>
+                  <span className="text-lg text-amber-100 font-bold">Available</span>
+                </div>
+                <p className="text-xs text-amber-100 mt-2 font-medium opacity-80">Check the market for matches</p>
               </div>
             </div>
 
-            <CalendarView shifts={shifts} users={users} currentDate={new Date()} userId={currentUser.id} showTodayOnly={false} />
+            <CalendarView
+              shifts={shifts}
+              users={users}
+              currentDate={scheduleDate}
+              onDateChange={setScheduleDate}
+              userId={currentUser.id}
+              showAll={true}
+              showTodayOnly={false}
+              hideViewToggle={true}
+            />
           </div>
         );
       case 'calendar':
@@ -297,7 +330,7 @@ export default function Home() {
         setCurrentUser={setCurrentUser}
       />
 
-      <main className="max-w-7xl mx-auto pt-20 sm:pt-24 px-4 sm:px-6 lg:px-8 pb-12">
+      <main className="max-w-7xl mx-auto pt-20 sm:pt-24 px-4 sm:px-6 lg:px-8 pb-24 sm:pb-12">
         {renderContent()}
       </main>
     </div>

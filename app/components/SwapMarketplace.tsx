@@ -165,57 +165,50 @@ export const SwapMarketplace: React.FC<SwapMarketplaceProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      {/* Header & Actions */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pb-6 border-b border-zinc-200">
         <div>
-          <h3 className="text-2xl font-bold text-zinc-900 flex items-center gap-2">
-            <RefreshCw className="text-blue-600" size={24} />
-            Swap Marketplace
-          </h3>
+          <h3 className="text-3xl font-bold text-zinc-900">Swap Market</h3>
           <p className="text-zinc-500 text-sm mt-1">Trade shifts with your teammates</p>
         </div>
         <button
           onClick={() => setShowCreateModal(true)}
-          className="flex items-center gap-2 px-5 py-3 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition-all shadow-lg hover:shadow-xl"
+          className="flex items-center justify-center gap-2 px-6 py-4 bg-blue-600 text-white rounded-2xl text-sm font-black hover:bg-blue-700 transition-all shadow-lg active:scale-95 w-full sm:w-auto"
         >
-          <Plus size={18} />
-          Post Swap Request
+          <Plus size={20} />
+          Post Swap
         </button>
       </div>
 
-      {/* Info Banner */}
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4">
-        <div className="flex items-start gap-3">
-          <RefreshCw className="text-blue-600 mt-0.5" size={18} />
-          <div>
-            <h4 className="text-sm font-semibold text-blue-900 mb-1">How Swap Marketplace Works</h4>
-            <p className="text-xs text-blue-700">
-              Post your shifts to swap, browse available requests, and accept swaps that work for you. All swaps are instant once accepted.
-            </p>
-          </div>
+      {/* Modern Tabs - Segmented Control */}
+      <div className="flex overflow-x-auto pb-4 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
+        <div className="flex bg-zinc-100 p-1 rounded-2xl border border-zinc-200 min-w-full sm:min-w-max">
+          <button
+            onClick={() => setActiveTab('available')}
+            className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all duration-300 ${activeTab === 'available'
+              ? 'bg-white text-blue-600 shadow-sm ring-1 ring-zinc-200'
+              : 'text-zinc-500 hover:text-zinc-900 text-center'
+              }`}
+          >
+            Available
+            <span className={`ml-1 text-[10px] px-1.5 py-0.5 rounded-full ${activeTab === 'available' ? 'bg-blue-100' : 'bg-zinc-200'}`}>
+              {availableSwaps.length}
+            </span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('myRequests')}
+            className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all duration-300 ${activeTab === 'myRequests'
+              ? 'bg-white text-blue-600 shadow-sm ring-1 ring-zinc-200'
+              : 'text-zinc-500 hover:text-zinc-900 text-center'
+              }`}
+          >
+            My Requests
+            <span className={`ml-1 text-[10px] px-1.5 py-0.5 rounded-full ${activeTab === 'myRequests' ? 'bg-blue-100' : 'bg-zinc-200'}`}>
+              {myRequests.length}
+            </span>
+          </button>
         </div>
-      </div>
-
-      {/* Tabs */}
-      <div className="flex gap-2 border-b border-zinc-200">
-        <button
-          onClick={() => setActiveTab('available')}
-          className={`px-4 py-2 text-sm font-semibold transition-all ${activeTab === 'available'
-            ? 'border-b-2 border-blue-600 text-blue-600'
-            : 'text-zinc-500 hover:text-zinc-700'
-            }`}
-        >
-          Available Swaps ({availableSwaps.length})
-        </button>
-        <button
-          onClick={() => setActiveTab('myRequests')}
-          className={`px-4 py-2 text-sm font-semibold transition-all ${activeTab === 'myRequests'
-            ? 'border-b-2 border-blue-600 text-blue-600'
-            : 'text-zinc-500 hover:text-zinc-700'
-            }`}
-        >
-          My Requests ({myRequests.length})
-        </button>
       </div>
 
       {/* Content */}

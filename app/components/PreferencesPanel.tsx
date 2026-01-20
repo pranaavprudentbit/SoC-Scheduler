@@ -188,21 +188,30 @@ export const PreferencesPanel: React.FC<PreferencesPanelProps> = ({
         )}
       </div>
 
-      {/* Internal Navigation */}
-      <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
-        {subTabs.map(tab => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveSubTab(tab.id as any)}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all whitespace-nowrap ${activeSubTab === tab.id
-              ? 'bg-blue-600 text-white shadow-md'
-              : 'bg-white border border-zinc-200 text-zinc-600 hover:bg-zinc-50'
-              }`}
-          >
-            <tab.icon size={16} />
-            {tab.label}
-          </button>
-        ))}
+      {/* Internal Navigation - App-like segmented control on mobile */}
+      <div className="flex gap-2 overflow-x-auto pb-4 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
+        <div className="flex bg-zinc-100 p-1 rounded-2xl border border-zinc-200 min-w-max">
+          {subTabs.map(tab => {
+            const isActive = activeSubTab === tab.id;
+            const Icon = tab.icon;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveSubTab(tab.id as any)}
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 ${isActive
+                  ? 'bg-white text-blue-600 shadow-sm ring-1 ring-zinc-200'
+                  : 'text-zinc-500 hover:text-zinc-900'
+                  }`}
+              >
+                <Icon size={18} strokeWidth={isActive ? 2.5 : 2} />
+                {tab.label}
+                {isActive && (
+                  <div className="w-1.5 h-1.5 rounded-full bg-blue-600 ml-1" />
+                )}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       <div className="space-y-6 animate-in fade-in duration-300">

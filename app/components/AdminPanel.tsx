@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { User, Shift, LeaveRequest } from '@/lib/types';
+import { User, Shift, LeaveRequest, SwapRequest } from '@/lib/types';
 import { AlertTriangle, BrainCircuit, Users, CalendarDays, FileText, BarChart3, Settings, Activity, Zap, TrendingUp } from 'lucide-react';
 import { UserManagement } from './UserManagement';
 import { AdminCalendarShiftManager } from './AdminCalendarShiftManager';
@@ -80,116 +80,125 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         <p className="text-zinc-500">Full control over schedules, users, and leave requests</p>
       </div>
 
-      {/* Navigation Tabs */}
-      <div className="flex gap-2 border-b border-zinc-200 pb-4 overflow-x-auto scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
-        <button
-          onClick={() => setActiveSection('overview')}
-          className={`flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-t-lg text-xs sm:text-sm font-semibold transition-all whitespace-nowrap flex-shrink-0 ${activeSection === 'overview'
-            ? 'bg-blue-600 text-white'
-            : 'text-zinc-600 hover:bg-zinc-100'
-            }`}
-        >
-          <BrainCircuit size={16} />
-          <span className="hidden sm:inline">Overview</span>
-          <span className="sm:hidden">Home</span>
-        </button>
-        <button
-          onClick={() => setActiveSection('analytics')}
-          className={`flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-t-lg text-xs sm:text-sm font-semibold transition-all whitespace-nowrap flex-shrink-0 ${activeSection === 'analytics'
-            ? 'bg-blue-600 text-white'
-            : 'text-zinc-600 hover:bg-zinc-100'
-            }`}
-        >
-          <BarChart3 size={16} />
-          Analytics
-        </button>
-        <button
-          onClick={() => setActiveSection('shifts')}
-          className={`flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-t-lg text-xs sm:text-sm font-semibold transition-all whitespace-nowrap flex-shrink-0 ${activeSection === 'shifts'
-            ? 'bg-blue-600 text-white'
-            : 'text-zinc-600 hover:bg-zinc-100'
-            }`}
-        >
-          <CalendarDays size={16} />
-          Shifts
-        </button>
-        <button
-          onClick={() => setActiveSection('bulk')}
-          className={`flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-t-lg text-xs sm:text-sm font-semibold transition-all whitespace-nowrap flex-shrink-0 ${activeSection === 'bulk'
-            ? 'bg-blue-600 text-white'
-            : 'text-zinc-600 hover:bg-zinc-100'
-            }`}
-        >
-          <BarChart3 size={16} />
-          <span className="hidden sm:inline">Bulk Ops</span>
-          <span className="sm:hidden">Bulk</span>
-        </button>
-        <button
-          onClick={() => setActiveSection('leaves')}
-          className={`flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-t-lg text-xs sm:text-sm font-semibold transition-all relative whitespace-nowrap flex-shrink-0 ${activeSection === 'leaves'
-            ? 'bg-blue-600 text-white'
-            : 'text-zinc-600 hover:bg-zinc-100'
-            }`}
-        >
-          <FileText size={16} />
-          <span className="hidden sm:inline">Leave Requests</span>
-          <span className="sm:hidden">Leaves</span>
-          {pendingLeaves > 0 && (
-            <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
-              {pendingLeaves}
-            </span>
-          )}
-        </button>
-        <button
-          onClick={() => setActiveSection('users')}
-          className={`flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-t-lg text-xs sm:text-sm font-semibold transition-all whitespace-nowrap flex-shrink-0 ${activeSection === 'users'
-            ? 'bg-blue-600 text-white'
-            : 'text-zinc-600 hover:bg-zinc-100'
-            }`}
-        >
-          <Users size={16} />
-          Users
-        </button>
-        <button
-          onClick={() => setActiveSection('coverage')}
-          className={`flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-t-lg text-xs sm:text-sm font-semibold transition-all whitespace-nowrap flex-shrink-0 ${activeSection === 'coverage'
-            ? 'bg-blue-600 text-white'
-            : 'text-zinc-600 hover:bg-zinc-100'
-            }`}
-        >
-          <Zap size={16} />
-          Coverage
-        </button>
-        <button
-          onClick={() => setActiveSection('recommendations')}
-          className={`flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-t-lg text-xs sm:text-sm font-semibold transition-all whitespace-nowrap flex-shrink-0 ${activeSection === 'recommendations'
-            ? 'bg-blue-600 text-white'
-            : 'text-zinc-600 hover:bg-zinc-100'
-            }`}
-        >
-          <TrendingUp size={16} />
-          Suggestions
-        </button>
-        <button
-          onClick={() => setActiveSection('activity')}
-          className={`flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-t-lg text-xs sm:text-sm font-semibold transition-all whitespace-nowrap flex-shrink-0 ${activeSection === 'activity'
-            ? 'bg-blue-600 text-white'
-            : 'text-zinc-600 hover:bg-zinc-100'
-            }`}
-        >
-          <Activity size={16} />
-          Logs
-        </button>
-        <button
-          onClick={() => setActiveSection('config')}
-          className={`flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-t-lg text-xs sm:text-sm font-semibold transition-all whitespace-nowrap flex-shrink-0 ${activeSection === 'config'
-            ? 'bg-blue-600 text-white'
-            : 'text-zinc-600 hover:bg-zinc-100'
-            }`}
-        >
-          <Settings size={16} />
-          Timings
-        </button>
+      {/* Navigation Tabs - Modern Segmented Control */}
+      <div className="flex gap-2 overflow-x-auto pb-4 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
+        <div className="flex bg-zinc-100 p-1 rounded-2xl border border-zinc-200 min-w-max">
+          <button
+            onClick={() => setActiveSection('overview')}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all duration-300 ${activeSection === 'overview'
+              ? 'bg-white text-blue-600 shadow-sm ring-1 ring-zinc-200'
+              : 'text-zinc-500 hover:text-zinc-900'
+              }`}
+          >
+            <BrainCircuit size={18} strokeWidth={activeSection === 'overview' ? 2.5 : 2} />
+            <span className="hidden sm:inline">Overview</span>
+            <span className="sm:hidden">Home</span>
+          </button>
+
+          <button
+            onClick={() => setActiveSection('analytics')}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all duration-300 ${activeSection === 'analytics'
+              ? 'bg-white text-blue-600 shadow-sm ring-1 ring-zinc-200'
+              : 'text-zinc-500 hover:text-zinc-900'
+              }`}
+          >
+            <BarChart3 size={18} strokeWidth={activeSection === 'analytics' ? 2.5 : 2} />
+            Analytics
+          </button>
+
+          <button
+            onClick={() => setActiveSection('shifts')}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all duration-300 ${activeSection === 'shifts'
+              ? 'bg-white text-blue-600 shadow-sm ring-1 ring-zinc-200'
+              : 'text-zinc-500 hover:text-zinc-900'
+              }`}
+          >
+            <CalendarDays size={18} strokeWidth={activeSection === 'shifts' ? 2.5 : 2} />
+            Shifts
+          </button>
+
+          <button
+            onClick={() => setActiveSection('bulk')}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all duration-300 ${activeSection === 'bulk'
+              ? 'bg-white text-blue-600 shadow-sm ring-1 ring-zinc-200'
+              : 'text-zinc-500 hover:text-zinc-900'
+              }`}
+          >
+            <Zap size={18} strokeWidth={activeSection === 'bulk' ? 2.5 : 2} />
+            Bulk
+          </button>
+
+          <button
+            onClick={() => setActiveSection('leaves')}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all relative duration-300 ${activeSection === 'leaves'
+              ? 'bg-white text-blue-600 shadow-sm ring-1 ring-zinc-200'
+              : 'text-zinc-500 hover:text-zinc-900'
+              }`}
+          >
+            <FileText size={18} strokeWidth={activeSection === 'leaves' ? 2.5 : 2} />
+            Leaves
+            {pendingLeaves > 0 && (
+              <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-black rounded-full flex items-center justify-center border-2 border-white">
+                {pendingLeaves}
+              </span>
+            )}
+          </button>
+
+          <button
+            onClick={() => setActiveSection('users')}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all duration-300 ${activeSection === 'users'
+              ? 'bg-white text-blue-600 shadow-sm ring-1 ring-zinc-200'
+              : 'text-zinc-500 hover:text-zinc-900'
+              }`}
+          >
+            <Users size={18} strokeWidth={activeSection === 'users' ? 2.5 : 2} />
+            Users
+          </button>
+
+          <button
+            onClick={() => setActiveSection('coverage')}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all duration-300 ${activeSection === 'coverage'
+              ? 'bg-white text-blue-600 shadow-sm ring-1 ring-zinc-200'
+              : 'text-zinc-500 hover:text-zinc-900'
+              }`}
+          >
+            <Zap size={18} strokeWidth={activeSection === 'coverage' ? 2.5 : 2} />
+            Coverage
+          </button>
+
+          <button
+            onClick={() => setActiveSection('recommendations')}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all duration-300 ${activeSection === 'recommendations'
+              ? 'bg-white text-blue-600 shadow-sm ring-1 ring-zinc-200'
+              : 'text-zinc-500 hover:text-zinc-900'
+              }`}
+          >
+            <TrendingUp size={18} strokeWidth={activeSection === 'recommendations' ? 2.5 : 2} />
+            Suggestions
+          </button>
+
+          <button
+            onClick={() => setActiveSection('activity')}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all duration-300 ${activeSection === 'activity'
+              ? 'bg-white text-blue-600 shadow-sm ring-1 ring-zinc-200'
+              : 'text-zinc-500 hover:text-zinc-900'
+              }`}
+          >
+            <Activity size={18} strokeWidth={activeSection === 'activity' ? 2.5 : 2} />
+            Logs
+          </button>
+
+          <button
+            onClick={() => setActiveSection('config')}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all duration-300 ${activeSection === 'config'
+              ? 'bg-white text-blue-600 shadow-sm ring-1 ring-zinc-200'
+              : 'text-zinc-500 hover:text-zinc-900'
+              }`}
+          >
+            <Settings size={18} strokeWidth={activeSection === 'config' ? 2.5 : 2} />
+            Timings
+          </button>
+        </div>
       </div>
 
       {error && (

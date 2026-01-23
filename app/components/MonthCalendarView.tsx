@@ -70,20 +70,20 @@ export const MonthCalendarView: React.FC<MonthCalendarViewProps> = ({ shifts, us
   return (
     <div className="w-full">
       {/* Header */}
-      <div className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-        <div>
+      <div className="mb-8 flex flex-col items-center justify-center gap-6">
+        <div className="text-center">
           <h2 className="text-3xl font-black text-zinc-900 tracking-tight">Full Schedule</h2>
-          <p className="text-sm font-medium text-zinc-500 mt-1">Operational view of team deployment</p>
+          <p className="text-sm font-medium text-zinc-500 mt-1 uppercase tracking-widest">Operational view of team deployment</p>
         </div>
 
-        <div className="flex items-center gap-3 bg-zinc-100 p-1 rounded-2xl border border-zinc-200">
+        <div className="flex items-center gap-3 bg-zinc-100 p-1 rounded-2xl border border-zinc-200 w-fit">
           <button
             onClick={previousMonth}
             className="p-2.5 rounded-xl bg-white shadow-sm border border-zinc-200 hover:bg-zinc-50 transition-all active:scale-95"
           >
             <ChevronLeft size={20} className="text-zinc-600" />
           </button>
-          <div className="text-sm font-black text-zinc-900 min-w-[120px] text-center px-2">
+          <div className="text-sm font-black text-zinc-900 min-w-[140px] text-center px-4 uppercase tracking-widest">
             {monthName}
           </div>
           <button

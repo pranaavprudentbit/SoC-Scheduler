@@ -166,14 +166,14 @@ export const SwapMarketplace: React.FC<SwapMarketplaceProps> = ({
   return (
     <div className="space-y-6">
       {/* Header & Actions */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pb-6 border-b border-zinc-200">
+      <div className="flex flex-col items-center justify-center gap-6 pb-8 border-b border-zinc-200 text-center">
         <div>
-          <h3 className="text-3xl font-bold text-zinc-900">Swap Market</h3>
-          <p className="text-zinc-500 text-sm mt-1">Trade shifts with your teammates</p>
+          <h3 className="text-3xl font-black text-zinc-900 tracking-tight">Swap Market</h3>
+          <p className="text-zinc-500 text-sm font-medium mt-1 uppercase tracking-widest">Trade shifts with your teammates</p>
         </div>
         <button
           onClick={() => setShowCreateModal(true)}
-          className="flex items-center justify-center gap-2 px-6 py-4 bg-blue-600 text-white rounded-2xl text-sm font-black hover:bg-blue-700 transition-all shadow-lg active:scale-95 w-full sm:w-auto"
+          className="flex items-center justify-center gap-2 px-8 py-4 bg-blue-600 text-white rounded-2xl text-sm font-black hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 active:scale-95 w-full sm:w-auto"
         >
           <Plus size={20} />
           Post Swap

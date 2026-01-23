@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { Shift, ShiftType, User } from '@/lib/types';
-import { Calendar, TrendingUp, Clock, Filter } from 'lucide-react';
+import { Calendar } from 'lucide-react';
 
 interface ShiftHistoryProps {
   shifts: Shift[];
@@ -60,16 +60,6 @@ export const ShiftHistory: React.FC<ShiftHistoryProps> = ({ shifts, currentUser 
     };
   }, [userShifts, dateRange]);
 
-  const getShiftColor = (type: ShiftType) => {
-    switch (type) {
-      case ShiftType.MORNING:
-        return 'bg-amber-50 border-amber-200 text-amber-900';
-      case ShiftType.EVENING:
-        return 'bg-blue-50 border-blue-200 text-blue-900';
-      case ShiftType.NIGHT:
-        return 'bg-slate-100 border-slate-300 text-slate-900';
-    }
-  };
 
   const getShiftIcon = (type: ShiftType) => {
     switch (type) {

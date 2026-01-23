@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
-import { LayoutDashboard, Calendar, Users, Settings, RefreshCw, LogOut, FileText, Menu, X, TrendingUp, CheckCircle2, MessageSquare, Zap, Activity } from 'lucide-react';
+import React from 'react';
+import { LayoutDashboard, Calendar, Users, Settings, RefreshCw, LogOut } from 'lucide-react';
 import { User } from '@/lib/types';
 import { auth } from '@/lib/firebase/config';
 import { signOut } from 'firebase/auth';
@@ -23,7 +23,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
   setCurrentUser: _setCurrentUser
 }) => {
   const router = useRouter();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleLogout = async () => {
     try {
@@ -55,7 +54,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const handleNavClick = (itemId: string) => {
     setActiveTab(itemId);
-    setMobileMenuOpen(false);
   };
 
   return (

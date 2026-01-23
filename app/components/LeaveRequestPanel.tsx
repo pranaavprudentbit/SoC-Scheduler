@@ -50,14 +50,6 @@ export const LeaveRequestPanel: React.FC<LeaveRequestPanelProps> = ({
   const userRequests = leaveRequests.filter(lr => lr.userId === currentUser.id)
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'PENDING': return 'bg-amber-100 text-amber-800 border-amber-200';
-      case 'APPROVED': return 'bg-emerald-100 text-emerald-800 border-emerald-200';
-      case 'REJECTED': return 'bg-red-100 text-red-800 border-red-200';
-      default: return 'bg-zinc-100 text-zinc-800 border-zinc-200';
-    }
-  };
 
   const getStatusIcon = (status: string) => {
     switch (status) {

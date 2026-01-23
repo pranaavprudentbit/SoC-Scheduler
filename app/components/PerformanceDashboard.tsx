@@ -14,8 +14,7 @@ interface PerformanceDashboardProps {
 export const PerformanceDashboard: React.FC<PerformanceDashboardProps> = ({
   currentUser,
   shifts,
-  swaps,
-  users
+  swaps
 }) => {
   const [teamAvg, setTeamAvg] = useState({ reliability: 0, shiftsCompleted: 0 });
   const [badges, setBadges] = useState<string[]>([]);

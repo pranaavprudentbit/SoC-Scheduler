@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Save, Clock, Calendar, X, Plus, Moon, Sun, Sunset, User as UserIcon, BarChart2, History, FileText, Activity } from 'lucide-react';
 import { db } from '@/lib/firebase/config';
 import { doc, updateDoc } from 'firebase/firestore';
@@ -169,13 +169,13 @@ export const PreferencesPanel: React.FC<PreferencesPanelProps> = ({
 
   return (
     <div className="max-w-6xl mx-auto space-y-4 sm:space-y-8 pb-20 sm:pb-0">
-      {/* Header - Refined for mobile transparency and focus */}
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start lg:items-center gap-4 sm:gap-6 pb-4 sm:pb-6 border-b border-zinc-200">
+      {/* Header - Centered for consistency */}
+      <div className="flex flex-col items-center justify-center gap-6 pb-8 border-b border-zinc-200 text-center">
         <div className="px-1 sm:px-0">
-          <h2 className="text-2xl sm:text-3xl font-black text-zinc-900 tracking-tight leading-none">
+          <h2 className="text-3xl font-black text-zinc-900 tracking-tight leading-none">
             Settings
           </h2>
-          <p className="text-zinc-500 text-xs sm:text-sm font-medium mt-1 uppercase tracking-wider">
+          <p className="text-zinc-500 text-sm font-medium mt-1 uppercase tracking-widest">
             Operational preferences & Profile
           </p>
         </div>
@@ -183,7 +183,7 @@ export const PreferencesPanel: React.FC<PreferencesPanelProps> = ({
           <button
             onClick={handleSave}
             disabled={loading}
-            className={`bg-blue-600 hover:bg-blue-700 text-white px-6 py-3.5 rounded-2xl text-[10px] sm:text-sm font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-xl w-full sm:w-auto ${loading ? 'opacity-50 cursor-not-allowed' : 'active:scale-95'}`}
+            className={`bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-2xl text-sm font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-200 w-full sm:w-auto ${loading ? 'opacity-50 cursor-not-allowed' : 'active:scale-95'}`}
           >
             <Save size={16} /> {loading ? 'Syncing...' : 'Update Profile'}
           </button>

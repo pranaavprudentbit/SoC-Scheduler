@@ -23,6 +23,7 @@ export default function Home() {
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [scheduleDate, setScheduleDate] = useState(new Date());
+  const [isDateManuallySet, setIsDateManuallySet] = useState(false);
 
   const router = useRouter();
 
@@ -119,6 +120,26 @@ export default function Home() {
 
     return () => unsubscribe();
   }, [router]);
+
+  // Handle auto-update of date
+  useEffect(() => {
+    const timer = setInterval(() => {
+      if (!isDateManuallySet) {
+        const now = new Date();
+        const todayStr = now.toISOString().split('T')[0];
+        const scheduleStr = scheduleDate.toISOString().split('T')[0];
+        if (todayStr !== scheduleStr) {
+          setScheduleDate(now);
+        }
+      }
+    }, 60000); // Check every minute
+    return () => clearInterval(timer);
+  }, [scheduleDate, isDateManuallySet]);
+
+  const handleDateChange = (date: Date) => {
+    setScheduleDate(date);
+    setIsDateManuallySet(true);
+  };
 
   const handleUserUpdate = async (updatedUser: User) => {
     // Update in Firestore
@@ -218,12 +239,48 @@ export default function Home() {
     );
   }
 
+  const getNextShift = () => {
+    if (!currentUser || !shifts.length) return null;
+    const now = new Date();
+    const todayStr = now.toISOString().split('T')[0];
+    const userShifts = shifts
+      .filter(s => s.userId === currentUser.id && s.date >= todayStr)
+      .sort((a, b) => a.date.localeCompare(b.date));
+    return userShifts[0] || null;
+  };
+
+  const getWeeklyHours = () => {
+    if (!currentUser) return 0;
+    const now = new Date();
+    const day = now.getDay();
+    const diff = now.getDate() - day + (day === 0 ? -6 : 1);
+    const startOfWeek = new Date(now.getFullYear(), now.getMonth(), diff);
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 7);
+
+    const weekShifts = shifts.filter(s => {
+      if (s.userId !== currentUser.id) return false;
+      const d = new Date(s.date);
+      return d >= startOfWeek && d < endOfWeek;
+    });
+    return weekShifts.length * 8; // Assuming 8 hours per shift
+  };
+
+  const nextShift = getNextShift();
+  const nextShiftDate = nextShift ? new Date(nextShift.date) : null;
+  const isShiftToday = nextShiftDate?.toISOString().split('T')[0] === new Date().toISOString().split('T')[0];
+  const isShiftTomorrow = nextShiftDate && (() => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    return nextShiftDate.toISOString().split('T')[0] === tomorrow.toISOString().split('T')[0];
+  })();
+
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
         return (
           <div className="animate-in fade-in duration-300 space-y-8">
-            <header>
+            <header className="text-center">
               <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-zinc-900 mb-1 tracking-tight">Welcome back, {currentUser.name.split(' ')[0]} 👋</h1>
               <p className="text-sm font-medium text-zinc-500">You're on top of your schedule</p>
             </header>
@@ -239,11 +296,15 @@ export default function Home() {
                   <span className="text-xs font-black text-blue-100 uppercase tracking-[0.2em]">Next Shift</span>
                 </div>
                 <div className="flex flex-wrap items-baseline gap-2">
-                  <span className="text-3xl font-black text-white tracking-tight">Tomorrow</span>
+                  <span className="text-3xl font-black text-white tracking-tight">
+                    {nextShift ? (isShiftToday ? 'Today' : isShiftTomorrow ? 'Tomorrow' : nextShiftDate?.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })) : 'No Shifts'}
+                  </span>
                 </div>
-                <div className="text-sm text-blue-100 mt-2 font-bold bg-white/10 w-fit px-3 py-1 rounded-full backdrop-blur-sm">
-                  09:00 - 18:00
-                </div>
+                {nextShift && (
+                  <div className="text-sm text-blue-100 mt-2 font-bold bg-white/10 w-fit px-3 py-1 rounded-full backdrop-blur-sm">
+                    {nextShift.type === ShiftType.MORNING ? '09:00 - 18:00' : nextShift.type === ShiftType.EVENING ? '17:00 - 02:00' : '01:00 - 10:00'}
+                  </div>
+                )}
               </div>
 
               <div className="group relative bg-gradient-to-br from-emerald-500 via-teal-600 to-emerald-700 rounded-[2rem] p-6 shadow-[0_20px_50px_rgba(16,185,129,0.2)] hover:shadow-emerald-500/30 transition-all overflow-hidden border border-white/10">
@@ -255,13 +316,13 @@ export default function Home() {
                   <span className="text-xs font-black text-emerald-100 uppercase tracking-[0.2em]">Weekly Hours</span>
                 </div>
                 <div className="flex flex-wrap items-baseline gap-2">
-                  <span className="text-3xl font-black text-white tracking-tight">{shifts.filter(s => s.userId === currentUser.id).length * 8}</span>
+                  <span className="text-3xl font-black text-white tracking-tight">{getWeeklyHours()}</span>
                   <span className="text-lg text-emerald-100 font-bold">/ 40h</span>
                 </div>
                 <div className="mt-4 h-1.5 w-full bg-black/10 rounded-full overflow-hidden">
                   <div
                     className="h-full bg-white rounded-full transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(255,255,255,0.5)]"
-                    style={{ width: `${Math.min((shifts.filter(s => s.userId === currentUser.id).length * 8 / 40) * 100, 100)}%` }}
+                    style={{ width: `${Math.min((getWeeklyHours() / 40) * 100, 100)}%` }}
                   />
                 </div>
               </div>
@@ -286,7 +347,7 @@ export default function Home() {
               shifts={shifts}
               users={users}
               currentDate={scheduleDate}
-              onDateChange={setScheduleDate}
+              onDateChange={handleDateChange}
               userId={currentUser.id}
               showAll={true}
               showTodayOnly={false}

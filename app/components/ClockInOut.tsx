@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Shift, ClockEntry, User } from '@/lib/types';
-import { Clock, Play, Square, AlertCircle } from 'lucide-react';
+import { Play, Square, AlertCircle } from 'lucide-react';
 import { collection, addDoc, getDocs, query, where, updateDoc, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 

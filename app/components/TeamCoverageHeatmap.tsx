@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo } from 'react';
-import { Shift, User, ShiftType, CoverageStatus } from '@/lib/types';
+import { Shift, ShiftType, CoverageStatus } from '@/lib/types';
 import { AlertTriangle, CheckCircle2, AlertCircle } from 'lucide-react';
 
 interface TeamCoverageHeatmapProps {
@@ -135,13 +135,12 @@ export const TeamCoverageHeatmap: React.FC<TeamCoverageHeatmapProps> = ({ shifts
           const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'short' });
           const dateDisplay = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
           const isToday = date === new Date().toISOString().split('T')[0];
-          
+
           return (
             <div
               key={date}
-              className={`rounded-xl p-4 border-2 ${
-                isToday ? 'border-blue-400 bg-blue-50' : 'border-zinc-200 bg-white'
-              }`}
+              className={`rounded-xl p-4 border-2 ${isToday ? 'border-blue-400 bg-blue-50' : 'border-zinc-200 bg-white'
+                }`}
             >
               <div className="flex items-center gap-2 mb-3">
                 <div className={`font-semibold text-sm ${isToday ? 'text-blue-900' : 'text-zinc-900'}`}>

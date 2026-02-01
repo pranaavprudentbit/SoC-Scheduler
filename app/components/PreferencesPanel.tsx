@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Save, Clock, Calendar, X, Plus, Moon, Sun, Sunset, User as UserIcon, BarChart2, History, FileText, Activity } from 'lucide-react';
+import { Save, Clock, Calendar, Plus, Moon, Sun, Sunset, User as UserIcon, BarChart2, History, FileText } from 'lucide-react';
 import { db } from '@/lib/firebase/config';
 import { doc, updateDoc } from 'firebase/firestore';
 import { User, Shift, SwapRequest, LeaveRequest, ShiftType } from '@/lib/types';

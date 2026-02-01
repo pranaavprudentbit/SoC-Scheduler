@@ -118,9 +118,9 @@ export const ShiftRecommendations: React.FC<ShiftRecommendationsProps> = ({
 
   const getShiftIcon = (type: ShiftType) => {
     switch (type) {
+      case ShiftType.NIGHT: return '🌙';
       case ShiftType.MORNING: return '☀️';
       case ShiftType.EVENING: return '🌆';
-      case ShiftType.NIGHT: return '🌙';
     }
   };
 
@@ -163,7 +163,17 @@ export const ShiftRecommendations: React.FC<ShiftRecommendationsProps> = ({
                         })}
                       </div>
                       <div className="text-xs text-zinc-500 mt-1">
-                        {shift.lunchStart}-{shift.lunchEnd} lunch • {shift.breakStart}-{shift.breakEnd} break
+                        {(() => {
+                          const formatToAmPm = (time: string) => {
+                            if (!time) return '';
+                            const [hours, minutes] = time.split(':');
+                            const h = parseInt(hours, 10);
+                            const ampm = h >= 12 ? 'PM' : 'AM';
+                            const h12 = h % 12 || 12;
+                            return `${h12.toString().padStart(2, '0')}:${minutes} ${ampm}`;
+                          };
+                          return `${formatToAmPm(shift.lunchStart)} - ${formatToAmPm(shift.lunchEnd)} lunch • ${formatToAmPm(shift.breakStart)} - ${formatToAmPm(shift.breakEnd)} break`;
+                        })()}
                       </div>
                     </div>
                   </div>
@@ -173,11 +183,10 @@ export const ShiftRecommendations: React.FC<ShiftRecommendationsProps> = ({
                       {rec.matchScore}
                     </div>
                     <div className="text-xs text-zinc-600 mt-1">match</div>
-                    <div className={`text-xs font-bold mt-2 px-2 py-1 rounded-full ${
-                      rec.urgency === 'HIGH' ? 'bg-red-200 text-red-800' :
+                    <div className={`text-xs font-bold mt-2 px-2 py-1 rounded-full ${rec.urgency === 'HIGH' ? 'bg-red-200 text-red-800' :
                       rec.urgency === 'MEDIUM' ? 'bg-amber-200 text-amber-800' :
-                      'bg-blue-200 text-blue-800'
-                    }`}>
+                        'bg-blue-200 text-blue-800'
+                      }`}>
                       {rec.urgency}
                     </div>
                   </div>
@@ -190,11 +199,10 @@ export const ShiftRecommendations: React.FC<ShiftRecommendationsProps> = ({
                 <button
                   onClick={() => handleAccept(rec.shiftId)}
                   disabled={isAccepted}
-                  className={`w-full px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
-                    isAccepted
-                      ? 'bg-emerald-100 text-emerald-700 border border-emerald-200'
-                      : 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg hover:shadow-xl'
-                  }`}
+                  className={`w-full px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-2 ${isAccepted
+                    ? 'bg-emerald-100 text-emerald-700 border border-emerald-200'
+                    : 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg hover:shadow-xl'
+                    }`}
                 >
                   {isAccepted ? (
                     <>

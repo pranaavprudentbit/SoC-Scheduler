@@ -40,12 +40,12 @@ export const MonthCalendarView: React.FC<MonthCalendarViewProps> = ({ shifts, us
 
   const getShiftIcon = (type: ShiftType, size = 12) => {
     switch (type) {
+      case ShiftType.NIGHT:
+        return <Moon className="text-slate-200" size={size} />;
       case ShiftType.MORNING:
         return <Sun className="text-amber-600" size={size} />;
       case ShiftType.EVENING:
         return <Sunset className="text-blue-600" size={size} />;
-      case ShiftType.NIGHT:
-        return <Moon className="text-slate-200" size={size} />;
     }
   };
 
@@ -166,42 +166,52 @@ export const MonthCalendarView: React.FC<MonthCalendarViewProps> = ({ shifts, us
 
                 {/* Day Content - Desktop/Tablet */}
                 <div className="hidden sm:flex flex-col gap-1.5">
-                  {dayShifts.map(shift => {
-                    const user = users.find(u => u.id === shift.userId);
-                    if (!user) return null;
+                  {dayShifts
+                    .sort((a, b) => {
+                      const order = { [ShiftType.NIGHT]: 1, [ShiftType.MORNING]: 2, [ShiftType.EVENING]: 3 };
+                      return (order[a.type] || 0) - (order[b.type] || 0);
+                    })
+                    .map(shift => {
+                      const user = users.find(u => u.id === shift.userId);
+                      if (!user) return null;
 
-                    return (
-                      <div
-                        key={shift.id}
-                        className={`text-[9px] px-2 py-1.5 rounded-lg border flex items-center gap-1.5 transition-all hover:scale-[1.02] active:scale-95 shadow-sm ${shift.type === ShiftType.MORNING
-                          ? 'bg-amber-50 border-amber-200 text-amber-900'
-                          : shift.type === ShiftType.EVENING
-                            ? 'bg-blue-50 border-blue-200 text-blue-900'
-                            : 'bg-zinc-900 border-zinc-800 text-white'
-                          }`}
-                      >
-                        <div className="opacity-70">{getShiftIcon(shift.type, 10)}</div>
-                        <span className="truncate font-black tracking-tight">{user.name.split(' ')[0]}</span>
-                      </div>
-                    );
-                  })}
+                      return (
+                        <div
+                          key={shift.id}
+                          className={`text-[9px] px-2 py-1.5 rounded-lg border flex items-center gap-1.5 transition-all hover:scale-[1.02] active:scale-95 shadow-sm ${shift.type === ShiftType.MORNING
+                            ? 'bg-amber-50 border-amber-200 text-amber-900'
+                            : shift.type === ShiftType.EVENING
+                              ? 'bg-blue-50 border-blue-200 text-blue-900'
+                              : 'bg-zinc-900 border-zinc-800 text-white'
+                            }`}
+                        >
+                          <div className="opacity-70">{getShiftIcon(shift.type, 10)}</div>
+                          <span className="truncate font-black tracking-tight">{user.name.split(' ')[0]}</span>
+                        </div>
+                      );
+                    })}
                 </div>
 
                 {/* Day Content - Mobile Small Badges */}
                 <div className="sm:hidden mt-auto flex flex-wrap gap-1">
-                  {dayShifts.map(shift => (
-                    <div
-                      key={shift.id}
-                      className={`p-1 rounded-md border shadow-xs ${shift.type === ShiftType.MORNING
-                        ? 'bg-amber-100 border-amber-200'
-                        : shift.type === ShiftType.EVENING
-                          ? 'bg-blue-100 border-blue-200'
-                          : 'bg-zinc-800 border-zinc-700'
-                        }`}
-                    >
-                      {getShiftIcon(shift.type, 8)}
-                    </div>
-                  ))}
+                  {dayShifts
+                    .sort((a, b) => {
+                      const order = { [ShiftType.NIGHT]: 1, [ShiftType.MORNING]: 2, [ShiftType.EVENING]: 3 };
+                      return (order[a.type] || 0) - (order[b.type] || 0);
+                    })
+                    .map(shift => (
+                      <div
+                        key={shift.id}
+                        className={`p-1 rounded-md border shadow-xs ${shift.type === ShiftType.MORNING
+                          ? 'bg-amber-100 border-amber-200'
+                          : shift.type === ShiftType.EVENING
+                            ? 'bg-blue-100 border-blue-200'
+                            : 'bg-zinc-800 border-zinc-700'
+                          }`}
+                      >
+                        {getShiftIcon(shift.type, 8)}
+                      </div>
+                    ))}
                 </div>
               </div>
             );
@@ -227,31 +237,36 @@ export const MonthCalendarView: React.FC<MonthCalendarViewProps> = ({ shifts, us
 
             <div className="space-y-3">
               {selectedDayShifts.length > 0 ? (
-                selectedDayShifts.map(shift => {
-                  const user = users.find(u => u.id === shift.userId);
-                  if (!user) return null;
+                selectedDayShifts
+                  .sort((a, b) => {
+                    const order = { [ShiftType.NIGHT]: 1, [ShiftType.MORNING]: 2, [ShiftType.EVENING]: 3 };
+                    return (order[a.type] || 0) - (order[b.type] || 0);
+                  })
+                  .map(shift => {
+                    const user = users.find(u => u.id === shift.userId);
+                    if (!user) return null;
 
-                  return (
-                    <div
-                      key={shift.id}
-                      className={`flex items-center gap-4 p-4 rounded-2xl border transition-all ${shift.type === ShiftType.MORNING
-                        ? 'bg-amber-50/50 border-amber-200'
-                        : shift.type === ShiftType.EVENING
-                          ? 'bg-blue-50/50 border-blue-200'
-                          : 'bg-zinc-50 border-zinc-200'
-                        }`}
-                    >
-                      <img src={user.avatar} className="w-10 h-10 rounded-full border-2 border-white shadow-sm" alt="" />
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm font-black text-zinc-900">{user.name}</div>
-                        <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">{user.role}</div>
+                    return (
+                      <div
+                        key={shift.id}
+                        className={`flex items-center gap-4 p-4 rounded-2xl border transition-all ${shift.type === ShiftType.MORNING
+                          ? 'bg-amber-50/50 border-amber-200'
+                          : shift.type === ShiftType.EVENING
+                            ? 'bg-blue-50/50 border-blue-200'
+                            : 'bg-zinc-50 border-zinc-200'
+                          }`}
+                      >
+                        <img src={user.avatar} className="w-10 h-10 rounded-full border-2 border-white shadow-sm" alt="" />
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-black text-zinc-900">{user.name}</div>
+                          <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">{user.role}</div>
+                        </div>
+                        <div className={`p-2.5 rounded-xl border ${getShiftColor(shift.type)} shadow-sm`}>
+                          {getShiftIcon(shift.type, 18)}
+                        </div>
                       </div>
-                      <div className={`p-2.5 rounded-xl border ${getShiftColor(shift.type)} shadow-sm`}>
-                        {getShiftIcon(shift.type, 18)}
-                      </div>
-                    </div>
-                  );
-                })
+                    );
+                  })
               ) : (
                 <div className="py-10 text-center">
                   <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-zinc-50 text-zinc-300 mb-3">

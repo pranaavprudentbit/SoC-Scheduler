@@ -10,37 +10,37 @@ export interface ShiftTiming {
 }
 
 export interface ShiftConfiguration {
+  Night: ShiftTiming;
   Morning: ShiftTiming;
   Evening: ShiftTiming;
-  Night: ShiftTiming;
 }
 
 export const DEFAULT_SHIFT_CONFIG: ShiftConfiguration = {
+  Night: {
+    start: '01:00',
+    end: '09:00',
+    lunchStart: '04:30',
+    lunchEnd: '05:15',
+    breakStart: '07:00',
+    breakEnd: '07:15',
+    workHours: 8,
+  },
   Morning: {
     start: '09:00',
-    end: '18:00',
-    lunchStart: '12:00',
-    lunchEnd: '13:00',
-    breakStart: '15:30',
-    breakEnd: '16:00',
+    end: '17:00',
+    lunchStart: '12:30',
+    lunchEnd: '13:15',
+    breakStart: '15:00',
+    breakEnd: '15:15',
     workHours: 8,
   },
   Evening: {
     start: '17:00',
-    end: '02:00',
-    lunchStart: '20:00',
-    lunchEnd: '21:00',
-    breakStart: '23:30',
-    breakEnd: '00:00',
-    workHours: 8,
-  },
-  Night: {
-    start: '01:00',
-    end: '10:00',
-    lunchStart: '04:00',
-    lunchEnd: '05:00',
-    breakStart: '07:30',
-    breakEnd: '08:00',
+    end: '01:00',
+    lunchStart: '20:30',
+    lunchEnd: '21:15',
+    breakStart: '23:00',
+    breakEnd: '23:15',
     workHours: 8,
   },
 };

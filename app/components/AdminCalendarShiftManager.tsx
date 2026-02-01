@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { User, Shift, ShiftType } from '@/lib/types';
 import { ChevronLeft, ChevronRight, Plus, Edit2, Trash2, Sun, Sunset, Moon, Calendar } from 'lucide-react';
 import { db } from '@/lib/firebase/config';
-import { collection, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
+import { collection, addDoc, updateDoc, deleteDoc, doc, query, where, getDocs } from 'firebase/firestore';
 
 interface AdminCalendarShiftManagerProps {
   users: User[];
@@ -53,11 +53,11 @@ export const AdminCalendarShiftManager: React.FC<AdminCalendarShiftManagerProps>
   const getDefaultBreaks = (type: ShiftType) => {
     switch (type) {
       case ShiftType.MORNING:
-        return { lunchStart: '12:00', lunchEnd: '13:00', breakStart: '15:30', breakEnd: '16:00' };
+        return { lunchStart: '12:30', lunchEnd: '13:15', breakStart: '15:00', breakEnd: '15:15' };
       case ShiftType.EVENING:
-        return { lunchStart: '20:00', lunchEnd: '21:00', breakStart: '23:30', breakEnd: '00:00' };
+        return { lunchStart: '20:30', lunchEnd: '21:15', breakStart: '23:00', breakEnd: '23:15' };
       case ShiftType.NIGHT:
-        return { lunchStart: '04:00', lunchEnd: '05:00', breakStart: '07:30', breakEnd: '08:00' };
+        return { lunchStart: '04:30', lunchEnd: '05:15', breakStart: '07:00', breakEnd: '07:15' };
     }
   };
 
@@ -78,6 +78,22 @@ export const AdminCalendarShiftManager: React.FC<AdminCalendarShiftManagerProps>
     if (!editingShift) return;
 
     try {
+      // Check for availability blocks
+      const availabilityQuery = query(
+        collection(db, 'user_availability'),
+        where('userId', '==', selectedUser),
+        where('date', '==', editingShift.date)
+      );
+
+      const availabilitySnapshot = await getDocs(availabilityQuery);
+
+      if (!availabilitySnapshot.empty) {
+        // Get reason if available
+        const blockData = availabilitySnapshot.docs[0].data();
+        alert(`❌ Cannot assign shift: User is unavailable on this date.\nReason: ${blockData.reason || 'Blocked'}`);
+        return;
+      }
+
       const breaks = getDefaultBreaks(editingShift.type);
 
       if (editingShift.shift) {
@@ -218,7 +234,7 @@ export const AdminCalendarShiftManager: React.FC<AdminCalendarShiftManagerProps>
           </div>
 
           {/* Shift Rows */}
-          {[ShiftType.MORNING, ShiftType.EVENING, ShiftType.NIGHT].map((shiftType) => (
+          {[ShiftType.NIGHT, ShiftType.MORNING, ShiftType.EVENING].map((shiftType) => (
             <div key={shiftType} className="grid grid-cols-8 border-b border-zinc-200 last:border-b-0">
               {/* Shift Type Label */}
               <div className="p-3 sm:p-4 flex items-center gap-2 border-r border-zinc-200 bg-zinc-50">

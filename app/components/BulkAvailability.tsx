@@ -106,36 +106,10 @@ export const BulkAvailability: React.FC<BulkAvailabilityProps> = ({ currentUser,
     }
   };
 
-  const quickAvailability = useMemo(() => {
-    const today = new Date();
-    const weekStart = new Date(today);
-    weekStart.setDate(today.getDate() - today.getDay() + (today.getDay() === 0 ? -6 : 1));
-
-    const weekEnd = new Date(weekStart);
-    weekEnd.setDate(weekStart.getDate() + 6);
-
-    return {
-      weekStart: weekStart.toISOString().split('T')[0],
-      weekEnd: weekEnd.toISOString().split('T')[0],
-      daysBlocked: unavailableDates.filter(
-        d => d.date >= weekStart.toISOString().split('T')[0] && d.date <= weekEnd.toISOString().split('T')[0]
-      ).length
-    };
+  const activeBlocksCount = useMemo(() => {
+    const today = new Date().toISOString().split('T')[0];
+    return unavailableDates.filter(d => d.date >= today).length;
   }, [unavailableDates]);
-
-  const nextWeekUnavailable = () => {
-    const nextWeek = new Date();
-    nextWeek.setDate(nextWeek.getDate() + 7);
-    const nextWeekStart = new Date(nextWeek);
-    nextWeekStart.setDate(nextWeek.getDate() - nextWeek.getDay() + 1);
-
-    const nextWeekEnd = new Date(nextWeekStart);
-    nextWeekEnd.setDate(nextWeekStart.getDate() + 6);
-
-    return unavailableDates.filter(
-      d => d.date >= nextWeekStart.toISOString().split('T')[0] && d.date <= nextWeekEnd.toISOString().split('T')[0]
-    ).length;
-  };
 
   const groupedByReason = useMemo(() => {
     const grouped: Record<string, UserAvailability[]> = {};
@@ -150,10 +124,9 @@ export const BulkAvailability: React.FC<BulkAvailabilityProps> = ({ currentUser,
   return (
     <div className="space-y-6 sm:space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500 pb-12">
       {/* Strategic Availability Metrices */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 gap-4">
         {[
-          { label: 'Current Cycle', value: quickAvailability.daysBlocked, sub: 'Days Restricted', icon: Calendar, color: 'text-indigo-600', bg: 'bg-indigo-50 border-indigo-100' },
-          { label: 'Upcoming Path', value: nextWeekUnavailable(), sub: 'Projected Blocks', icon: Calendar, color: 'text-blue-600', bg: 'bg-blue-50 border-blue-100' },
+          { label: 'Days Restricted', value: activeBlocksCount, sub: 'Future Active Blocks', icon: Calendar, color: 'text-indigo-600', bg: 'bg-indigo-50 border-indigo-100' },
           { label: 'Full Log', value: unavailableDates.length, sub: 'Total Record Count', icon: AlertCircle, color: 'text-amber-600', bg: 'bg-amber-50 border-amber-100' }
         ].map((item, idx) => (
           <div key={idx} className={`bg-white border rounded-[2.5rem] p-6 shadow-sm transition-all hover:shadow-md ${item.bg}`}>

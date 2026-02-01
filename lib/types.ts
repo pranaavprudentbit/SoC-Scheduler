@@ -4,14 +4,14 @@ export enum Role {
 }
 
 export enum ShiftType {
-  MORNING = 'Morning', // 09:00 - 18:00 (8 hours work + 1h lunch + 30m break)
-  EVENING = 'Evening', // 17:00 - 02:00 (8 hours work + 1h lunch + 30m break)
-  NIGHT = 'Night'      // 01:00 - 10:00 (8 hours work + 1h lunch + 30m break)
+  NIGHT = 'Night',      // 01:00 - 09:00 (8 hours work included breaks)
+  MORNING = 'Morning', // 09:00 - 17:00 (8 hours work included breaks)
+  EVENING = 'Evening', // 17:00 - 01:00 (8 hours work included breaks)
 }
 
 // Scheduling constants
 export const SHIFTS_PER_WEEK = 5; // Each user works 5 shifts per week
-export const HOURS_PER_SHIFT = 8; // 8 hours of actual work per shift
+export const HOURS_PER_SHIFT = 8; // 8 hours of work per shift (inclusive of breaks)
 export const HOURS_PER_WEEK = 40; // Total: 5 shifts × 8 hours = 40 hours/week
 export const WORKERS_PER_DAY = 3; // Only 3 people work per day (1 Morning, 1 Evening, 1 Night)
 export const REST_DAYS_PER_WEEK = 2; // Each user gets 2 rest days per week

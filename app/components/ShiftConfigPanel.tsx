@@ -57,13 +57,13 @@ export const ShiftConfigPanel: React.FC = () => {
     }));
   };
 
-  const ShiftTimingCard = ({ 
-    type, 
-    timing, 
-    color 
-  }: { 
-    type: keyof ShiftConfiguration; 
-    timing: ShiftTiming; 
+  const ShiftTimingCard = ({
+    type,
+    timing,
+    color
+  }: {
+    type: keyof ShiftConfiguration;
+    timing: ShiftTiming;
     color: string;
   }) => (
     <div className={`bg-white border-2 ${color} rounded-2xl p-6 shadow-sm`}>
@@ -78,7 +78,6 @@ export const ShiftConfigPanel: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-2 gap-4">
-        {/* Shift Start & End */}
         <div>
           <label className="block text-xs font-semibold text-zinc-700 mb-2">Shift Start</label>
           <input
@@ -97,66 +96,22 @@ export const ShiftConfigPanel: React.FC = () => {
             className="w-full px-3 py-2 border border-zinc-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
-
-        {/* Lunch Break */}
-        <div>
-          <label className="block text-xs font-semibold text-zinc-700 mb-2">Lunch Start</label>
-          <input
-            type="time"
-            value={timing.lunchStart}
-            onChange={(e) => updateTiming(type, 'lunchStart', e.target.value)}
-            className="w-full px-3 py-2 border border-zinc-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-        <div>
-          <label className="block text-xs font-semibold text-zinc-700 mb-2">Lunch End</label>
-          <input
-            type="time"
-            value={timing.lunchEnd}
-            onChange={(e) => updateTiming(type, 'lunchEnd', e.target.value)}
-            className="w-full px-3 py-2 border border-zinc-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-
-        {/* Short Break */}
-        <div>
-          <label className="block text-xs font-semibold text-zinc-700 mb-2">Break Start</label>
-          <input
-            type="time"
-            value={timing.breakStart}
-            onChange={(e) => updateTiming(type, 'breakStart', e.target.value)}
-            className="w-full px-3 py-2 border border-zinc-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-        <div>
-          <label className="block text-xs font-semibold text-zinc-700 mb-2">Break End</label>
-          <input
-            type="time"
-            value={timing.breakEnd}
-            onChange={(e) => updateTiming(type, 'breakEnd', e.target.value)}
-            className="w-full px-3 py-2 border border-zinc-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-
-        {/* Work Hours */}
-        <div className="col-span-2">
-          <label className="block text-xs font-semibold text-zinc-700 mb-2">Work Hours (excluding breaks)</label>
-          <input
-            type="number"
-            min="4"
-            max="12"
-            step="0.5"
-            value={timing.workHours}
-            onChange={(e) => updateTiming(type, 'workHours', parseFloat(e.target.value))}
-            className="w-full px-3 py-2 border border-zinc-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
       </div>
 
       {/* Summary */}
       <div className="mt-4 p-3 bg-zinc-50 rounded-lg">
         <p className="text-xs text-zinc-600">
-          <strong>Summary:</strong> {timing.start} - {timing.end} ({timing.workHours}h work + 1h lunch + 30min break)
+          <strong>Summary:</strong> {(() => {
+            const formatToAmPm = (time: string) => {
+              if (!time) return '';
+              const [hours, minutes] = time.split(':');
+              const h = parseInt(hours, 10);
+              const ampm = h >= 12 ? 'PM' : 'AM';
+              const h12 = h % 12 || 12;
+              return `${h12.toString().padStart(2, '0')}:${minutes} ${ampm}`;
+            };
+            return `${formatToAmPm(timing.start)} - ${formatToAmPm(timing.end)}`;
+          })()} ({timing.workHours}h duration including breaks)
         </p>
       </div>
     </div>
@@ -196,9 +151,9 @@ export const ShiftConfigPanel: React.FC = () => {
 
       {/* Shift Timing Cards */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <ShiftTimingCard type="Night" timing={config.Night} color="border-slate-300" />
         <ShiftTimingCard type="Morning" timing={config.Morning} color="border-amber-200" />
         <ShiftTimingCard type="Evening" timing={config.Evening} color="border-blue-200" />
-        <ShiftTimingCard type="Night" timing={config.Night} color="border-slate-300" />
       </div>
 
       {/* Action Buttons */}

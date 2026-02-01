@@ -27,6 +27,14 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 }) => {
   const [viewMode, setViewMode] = useState<'week' | 'month'>('week');
   const [isMobile, setIsMobile] = useState(false);
+  const [now, setNow] = useState(new Date());
+
+  useEffect(() => {
+    // Sync now on mount immediately to ensure hydration match isn't an issue, 
+    // but here we just want live updates.
+    const timer = setInterval(() => setNow(new Date()), 60000);
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -108,9 +116,9 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 
   const getShiftTime = (type: ShiftType) => {
     switch (type) {
-      case ShiftType.MORNING: return '09:00 - 18:00';
-      case ShiftType.EVENING: return '17:00 - 02:00';
-      case ShiftType.NIGHT: return '01:00 - 10:00';
+      case ShiftType.MORNING: return '09:00 AM - 05:00 PM';
+      case ShiftType.EVENING: return '05:00 PM - 01:00 AM';
+      case ShiftType.NIGHT: return '01:00 AM - 09:00 AM';
     }
   };
 
@@ -179,7 +187,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
           )}
 
           <div className="flex flex-wrap items-center justify-center gap-3">
-            {[ShiftType.MORNING, ShiftType.EVENING, ShiftType.NIGHT].map(type => (
+            {[ShiftType.NIGHT, ShiftType.MORNING, ShiftType.EVENING].map(type => (
               <div key={type} className="flex items-center gap-3 px-4 py-2 bg-white border border-zinc-100 rounded-[1.2rem] shadow-sm">
                 <div className="flex items-center gap-2">
                   {getShiftIcon(type)}
@@ -223,27 +231,64 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 
                 {/* Shift Stack */}
                 <div className="space-y-1.5 flex-1">
-                  {[ShiftType.MORNING, ShiftType.EVENING, ShiftType.NIGHT].map(type => {
+                  {[ShiftType.NIGHT, ShiftType.MORNING, ShiftType.EVENING].map(type => {
                     const shift = dayShifts.find(s => s.type === type);
                     const isCurrentUser = shift?.userId === userId;
+
+                    // Check if this specific shift is currently active (LIVE)
+                    const isShiftActive = () => {
+                      const shiftStart = new Date(date);
+                      const shiftEnd = new Date(date);
+                      const currentTime = now.getTime();
+
+                      // Set exact timings based on our 8-hour logic
+                      if (type === ShiftType.NIGHT) {
+                        shiftStart.setHours(1, 0, 0, 0);
+                        shiftEnd.setHours(9, 0, 0, 0);
+                      } else if (type === ShiftType.MORNING) {
+                        shiftStart.setHours(9, 0, 0, 0);
+                        shiftEnd.setHours(17, 0, 0, 0);
+                      } else if (type === ShiftType.EVENING) {
+                        shiftStart.setHours(17, 0, 0, 0);
+                        shiftEnd.setDate(shiftEnd.getDate() + 1); // Ends next day
+                        shiftEnd.setHours(1, 0, 0, 0);
+                      }
+
+                      return currentTime >= shiftStart.getTime() && currentTime < shiftEnd.getTime();
+                    };
+
+                    const isLive = isShiftActive();
 
                     return (
                       <div
                         key={type}
-                        className={`flex flex-col p-2 rounded-2xl transition-all ${shift
-                          ? isCurrentUser
-                            ? 'bg-blue-600 text-white shadow-md ring-2 ring-blue-500 ring-offset-1'
-                            : 'bg-zinc-50 border border-zinc-100 text-zinc-600'
+                        className={`flex flex-col p-2 rounded-2xl transition-all relative overflow-hidden ${shift
+                          ? isLive
+                            ? 'bg-white border-2 border-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.15)] z-20 scale-[1.02]'
+                            : isCurrentUser
+                              ? 'bg-blue-600 text-white shadow-md ring-2 ring-blue-500 ring-offset-1'
+                              : 'bg-zinc-50 border border-zinc-100 text-zinc-600'
                           : 'bg-transparent border border-dashed border-zinc-100 opacity-20'
                           }`}
                       >
                         <div className="flex items-center justify-between mb-0.5">
-                          <div className={`${isCurrentUser ? 'text-white' : 'text-zinc-400'}`}>
+                          <div className={`${isCurrentUser && !isLive ? 'text-white' : isLive ? 'text-emerald-600' : 'text-zinc-400'}`}>
                             {getShiftIcon(type)}
                           </div>
-                          <span className="text-[7px] font-black uppercase tracking-tighter opacity-70">{type.charAt(0)}</span>
+
+                          <div className="flex items-center gap-1.5">
+                            {isLive && shift && (
+                              <span className="relative flex h-1.5 w-1.5">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+                              </span>
+                            )}
+                            <span className={`text-[7px] font-black uppercase tracking-tighter ${isLive ? 'text-emerald-600' : 'opacity-70'}`}>
+                              {isLive ? 'LIVE' : ''}
+                            </span>
+                          </div>
                         </div>
-                        <div className="text-[9px] font-black truncate uppercase tracking-tighter">
+                        <div className={`text-[9px] font-black truncate uppercase tracking-tighter ${isLive ? 'text-zinc-900' : ''}`}>
                           {shift ? (isCurrentUser ? "ME" : users.find(u => u.id === shift.userId)?.name.split(' ')[0]) : "OFF"}
                         </div>
                       </div>

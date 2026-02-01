@@ -39,9 +39,9 @@ export const ShiftHistory: React.FC<ShiftHistoryProps> = ({ shifts, currentUser 
   const stats = useMemo(() => {
     const totalShifts = userShifts.length;
     const totalHours = totalShifts * 8; // 8 hours per shift
+    const nightCount = userShifts.filter(s => s.type === ShiftType.NIGHT).length;
     const morningCount = userShifts.filter(s => s.type === ShiftType.MORNING).length;
     const eveningCount = userShifts.filter(s => s.type === ShiftType.EVENING).length;
-    const nightCount = userShifts.filter(s => s.type === ShiftType.NIGHT).length;
 
     // Trend: compare first half vs second half
     const midpoint = Math.floor(userShifts.length / 2);
@@ -63,9 +63,9 @@ export const ShiftHistory: React.FC<ShiftHistoryProps> = ({ shifts, currentUser 
 
   const getShiftIcon = (type: ShiftType) => {
     switch (type) {
+      case ShiftType.NIGHT: return '🌙';
       case ShiftType.MORNING: return '☀️';
       case ShiftType.EVENING: return '🌆';
-      case ShiftType.NIGHT: return '🌙';
     }
   };
 
@@ -76,7 +76,7 @@ export const ShiftHistory: React.FC<ShiftHistoryProps> = ({ shifts, currentUser 
         {[
           { label: 'Deployments', value: stats.totalShifts, sub: `${stats.avgShiftsPerWeek}/W Avg`, color: 'text-blue-600' },
           { label: 'Total Hours', value: stats.totalHours, sub: 'Active Duty', color: 'text-emerald-600' },
-          { label: 'Distribution', value: `${stats.morningCount}/${stats.eveningCount}/${stats.nightCount}`, sub: 'M/E/N Split', color: 'text-zinc-900' },
+          { label: 'Distribution', value: `${stats.nightCount}/${stats.morningCount}/${stats.eveningCount}`, sub: 'N/M/E Split', color: 'text-zinc-900' },
           { label: 'Trend', value: stats.trend.toUpperCase(), sub: 'Performance', color: stats.trend === 'up' ? 'text-emerald-600' : stats.trend === 'down' ? 'text-red-600' : 'text-zinc-400' }
         ].map((stat, i) => (
           <div key={i} className="bg-white border border-zinc-200 rounded-3xl p-4 sm:p-5 shadow-sm">
@@ -106,7 +106,7 @@ export const ShiftHistory: React.FC<ShiftHistoryProps> = ({ shifts, currentUser 
           </div>
           <div className="w-[1px] h-4 bg-zinc-200 mx-1" />
           <div className="flex gap-1">
-            {['ALL', ShiftType.MORNING, ShiftType.EVENING, ShiftType.NIGHT].map(type => (
+            {['ALL', ShiftType.NIGHT, ShiftType.MORNING, ShiftType.EVENING].map(type => (
               <button
                 key={type}
                 onClick={() => setFilterType(type as any)}

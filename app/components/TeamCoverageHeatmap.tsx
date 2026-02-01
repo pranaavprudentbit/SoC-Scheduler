@@ -26,9 +26,9 @@ export const TeamCoverageHeatmap: React.FC<TeamCoverageHeatmapProps> = ({ shifts
 
       // Each shift type should have exactly 1 person
       [
+        { type: ShiftType.NIGHT, count: nightCount },
         { type: ShiftType.MORNING, count: morningCount },
-        { type: ShiftType.EVENING, count: eveningCount },
-        { type: ShiftType.NIGHT, count: nightCount }
+        { type: ShiftType.EVENING, count: eveningCount }
       ].forEach(({ type, count }) => {
         const status = count === 0 ? 'UNDERSTAFFED' : count === 1 ? 'OK' : 'OVERSTAFFED';
         data.push({

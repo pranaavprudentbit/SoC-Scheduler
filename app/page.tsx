@@ -302,7 +302,7 @@ export default function Home() {
                 </div>
                 {nextShift && (
                   <div className="text-sm text-blue-100 mt-2 font-bold bg-white/10 w-fit px-3 py-1 rounded-full backdrop-blur-sm">
-                    {nextShift.type === ShiftType.MORNING ? '09:00 - 18:00' : nextShift.type === ShiftType.EVENING ? '17:00 - 02:00' : '01:00 - 10:00'}
+                    {nextShift.type === ShiftType.NIGHT ? '01:00 AM - 09:00 AM' : nextShift.type === ShiftType.MORNING ? '09:00 AM - 05:00 PM' : '05:00 PM - 01:00 AM'}
                   </div>
                 )}
               </div>

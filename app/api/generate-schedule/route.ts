@@ -33,31 +33,41 @@ export async function POST(request: NextRequest) {
     
     SHIFT TIMINGS (IMPORTANT - USE THESE EXACT TIMES):
     
-    Morning Shift:
-    - Start: ${config.Morning.start}
-    - End: ${config.Morning.end}
-    - Lunch Break: ${config.Morning.lunchStart} - ${config.Morning.lunchEnd} (1 hour)
-    - Short Break: ${config.Morning.breakStart} - ${config.Morning.breakEnd} (30 minutes)
-    - Work Hours: ${config.Morning.workHours} hours (excluding breaks)
-    
-    Evening Shift:
-    - Start: ${config.Evening.start}
-    - End: ${config.Evening.end}
-    - Lunch Break: ${config.Evening.lunchStart} - ${config.Evening.lunchEnd} (1 hour)
-    - Short Break: ${config.Evening.breakStart} - ${config.Evening.breakEnd} (30 minutes)
-    - Work Hours: ${config.Evening.workHours} hours (excluding breaks)
-    
-    Night Shift:
+    Night Shift (First shift of the day):
     - Start: ${config.Night.start}
     - End: ${config.Night.end}
-    - Lunch Break: ${config.Night.lunchStart} - ${config.Night.lunchEnd} (1 hour)
-    - Short Break: ${config.Night.breakStart} - ${config.Night.breakEnd} (30 minutes)
-    - Work Hours: ${config.Night.workHours} hours (excluding breaks)
+    - Lunch Break: ${config.Night.lunchStart} - ${config.Night.lunchEnd} (45 mins)
+    - Break: ${config.Night.breakStart} - ${config.Night.breakEnd} (15 mins)
+    - Total Duration: 8 hours (INCLUDES all breaks)
     
+    Morning Shift (Second shift of the day):
+    - Start: ${config.Morning.start}
+    - End: ${config.Morning.end}
+    - Lunch Break: ${config.Morning.lunchStart} - ${config.Morning.lunchEnd} (45 mins)
+    - Break: ${config.Morning.breakStart} - ${config.Morning.breakEnd} (15 mins)
+    - Total Duration: 8 hours (INCLUDES all breaks)
+    
+    Evening Shift (Third shift of the day):
+    - Start: ${config.Evening.start}
+    - End: ${config.Evening.end}
+    - Lunch Break: ${config.Evening.lunchStart} - ${config.Evening.lunchEnd} (45 mins)
+    - Break: ${config.Evening.breakStart} - ${config.Evening.breakEnd} (15 mins)
+    - Total Duration: 8 hours (INCLUDES all breaks)
+    
+    CRITICAL DAY BOUNDARY LOGIC:
+    - **Day Start**: The "Day" begins at 01:00 AM with the Night Shift.
+    - **Sequence**: Night -> Morning -> Evening
+    - **Date Alignment**: All three shifts belong to the SAME calendar date.
+      - Example: "Monday" shifts are:
+        1. Mon 01:00 AM (Night)
+        2. Mon 09:00 AM (Morning)
+        3. Mon 05:00 PM (Evening) -> Ends Tues 01:00 AM
+    - Use this logic strictly for assigning "Day Off" and grouping shifts.
+
     CRITICAL REQUIREMENTS:
     - Each user MUST work exactly 5 shifts per week (7 days)
-    - Each shift duration includes work time + lunch + break
-    - Total work hours per user per week: ${config.Morning.workHours * 5} hours (5 shifts × ${config.Morning.workHours} hours)
+    - Each shift duration includes work time + lunch + break (No extra hours added)
+    - No Overlaps between shifts. 09:00 is strictly end of Night and start of Morning.
     
     SHIFT STRUCTURE PER DAY:
     - Only 3 users work per day (1 Morning, 1 Evening, 1 Night)
@@ -65,31 +75,21 @@ export async function POST(request: NextRequest) {
     - All other users are OFF/on leave that day
     
     Constraints:
-    1. **5 Shifts Per Week**: Every user must have EXACTLY 5 shifts within each 7-day period. Track this carefully.
-    2. **3 Workers Per Day**: Each day must have exactly 3 shifts total (1 Morning, 1 Evening, 1 Night). No more, no less.
+    1. **5 Shifts Per Week**: Every user must have EXACTLY 5 shifts within each 7-day period.
+    2. **3 Workers Per Day**: Each day must have exactly 3 shifts total (1 Morning, 1 Evening, 1 Night).
     3. **Smart Rest Management**: 
-       - Each user gets 2 consecutive days off per week when possible
-       - Avoid scheduling more than 5 consecutive work days
-       - Distribute rest days fairly across all users
-       - Ensure everyone gets at least 1 weekend day off in rotation
+       - Each user gets 2 consecutive days off per week where possible.
+       - Ensure everyone gets at least 1 weekend day off in rotation.
     4. **Fair Rotation**: 
-       - Rotate who works on weekends fairly
-       - Distribute Night shifts evenly across all users over time
-       - No user should work significantly more difficult shifts than others
-    5. **No Back-to-Back Shifts**: Never assign the same user consecutive shifts (e.g., Evening shift ending at ${config.Evening.end} followed by Morning shift starting at ${config.Morning.start} next day).
-    6. **Avoid Burnout**: Try to give users who worked Night shift a rest day after if possible.
-    7. **Preferences (OPTIONAL)**: If a user has 'unavailableDates', respect them strictly and give them leave that day. If they have 'preferredDays' or 'preferredShifts', try to accommodate them when possible. If preferences are empty or not set, generate a balanced schedule automatically.
-    8. **Use Configured Break Times**: Always use the exact break times specified above for each shift type.
+       - Rotate Night shifts evenly.
+    5. **No Back-to-Back Shifts**: Never assign consecutive shifts (e.g. Evening -> Morning next day is OK logic-wise as 8 hours rest, but harder. Avoid if possible).
+       - STRICTLY FORBIDDEN: Morning -> Evening on same day (doubles).
+       - STRICTLY FORBIDDEN: Night -> Morning on same day.
+    6. **Avoid Burnout**: Try to give users who worked Night shift a rest day after.
+    7. **Preferences**: Respect 'unavailableDates'.
+    8. **Use Configured Break Times**: Always use the exact break times specified above.
     
     Users: ${JSON.stringify(userContext)}
-    
-    NOTE: With ${users.length} users and 3 workers per day, most users will be off on any given day. This is normal and expected.
-    
-    IMPORTANT: 
-    - Verify each user gets exactly 5 shifts per 7-day period
-    - Verify each day has exactly 3 shifts (1 Morning, 1 Evening, 1 Night)
-    - Ensure fair distribution of rest days and leave days across all users
-    - Use the EXACT break times provided above
     
     Return a JSON array of Shift objects.
   `;
@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
               date: { type: Type.STRING, description: "YYYY-MM-DD" },
               type: {
                 type: Type.STRING,
-                enum: [ShiftType.MORNING, ShiftType.EVENING, ShiftType.NIGHT],
+                enum: [ShiftType.NIGHT, ShiftType.MORNING, ShiftType.EVENING],
               },
               userId: { type: Type.STRING },
               lunchStart: { type: Type.STRING, description: "HH:mm" },
@@ -141,39 +141,39 @@ export async function POST(request: NextRequest) {
 
     // Save shifts to Firestore
     const shiftsCollection = adminDb.collection('shifts');
-    
+
     // Get today's date to prevent rescheduling current/past dates
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const todayStr = today.toISOString().split('T')[0];
-    
+
     // Only delete FUTURE shifts (tomorrow onwards)
     const tomorrowDate = new Date(today);
     tomorrowDate.setDate(tomorrowDate.getDate() + 1);
     const tomorrowStr = tomorrowDate.toISOString().split('T')[0];
-    
+
     const endDate = new Date(startDate);
     endDate.setDate(endDate.getDate() + days);
     const endDateStr = endDate.toISOString().split('T')[0];
-    
+
     // Fetch all existing manual shifts to preserve them
     const manualShiftsQuery = await shiftsCollection
       .where('manuallyCreated', '==', true)
       .where('date', '>=', tomorrowStr)
       .where('date', '<', endDateStr)
       .get();
-    
+
     const manualShifts = manualShiftsQuery.docs.map(doc => ({
       id: doc.id,
       ...doc.data(),
     }));
-    
+
     // Only delete AUTO-GENERATED shifts from tomorrow onwards, never delete manual shifts or current/past dates
     const oldShiftsQuery = await shiftsCollection
       .where('date', '>=', tomorrowStr)
       .where('date', '<', endDateStr)
       .get();
-    
+
     const batch = adminDb.batch();
     oldShiftsQuery.docs.forEach((doc) => {
       const data = doc.data();
@@ -191,17 +191,17 @@ export async function POST(request: NextRequest) {
         console.log(`Skipping ${shift.date} - current or past date, only swaps allowed`);
         continue;
       }
-      
+
       // Skip if there's a manually created shift for this date and shift type
       const hasManualShift = manualShifts.some(
         (ms: any) => ms.date === shift.date && ms.shift === shift.type
       );
-      
+
       if (hasManualShift) {
         console.log(`Skipping ${shift.date} ${shift.type} - manually created shift exists, AI cannot override`);
         continue;
       }
-      
+
       const docRef = shiftsCollection.doc();
       batch.set(docRef, {
         date: shift.date,

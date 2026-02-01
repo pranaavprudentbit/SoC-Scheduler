@@ -29,6 +29,13 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   const [isMobile, setIsMobile] = useState(false);
   const [now, setNow] = useState(new Date());
 
+  const getLocalDateString = (d: Date) => {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   useEffect(() => {
     // Sync now on mount immediately to ensure hydration match isn't an issue, 
     // but here we just want live updates.
@@ -50,7 +57,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 
   // Calculate dates based on view mode
   const getDates = () => {
-    if (showTodayOnly) return [new Date().toISOString().split('T')[0]];
+    if (showTodayOnly) return [getLocalDateString(new Date())];
 
     if (viewMode === 'month') {
       const year = currentDate.getFullYear();
@@ -60,7 +67,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
       const dates = [];
 
       for (let d = new Date(firstDay); d <= lastDay; d.setDate(d.getDate() + 1)) {
-        dates.push(new Date(d).toISOString().split('T')[0]);
+        dates.push(getLocalDateString(d));
       }
       return dates;
     }
@@ -70,7 +77,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
       return [0, 1].map(offset => {
         const d = new Date(currentDate);
         d.setDate(d.getDate() + offset);
-        return d.toISOString().split('T')[0];
+        return getLocalDateString(d);
       });
     }
 
@@ -83,7 +90,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
     return Array.from({ length: 7 }, (_, i) => {
       const d = new Date(startOfWeek);
       d.setDate(d.getDate() + i);
-      return d.toISOString().split('T')[0];
+      return getLocalDateString(d);
     });
   };
 
@@ -206,12 +213,13 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
       <div className="relative">
         <div className={`grid ${isMobile ? 'grid-cols-2' : 'lg:grid-cols-7'} gap-3 lg:gap-4 pb-4 lg:pb-0`}>
           {dates.map((date) => {
-            const dateObj = new Date(date);
+            const [y, m, d] = date.split('-').map(Number);
+            const dateObj = new Date(y, m - 1, d);
             const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'short' });
-            const dayNum = dateObj.getDate();
+            const dayNum = d; // Use parsed day directly
             const dayShifts = filteredShifts.filter(s => s.date === date);
-            const isToday = new Date().toISOString().split('T')[0] === date;
-            const isCurrentSelection = currentDate.toISOString().split('T')[0] === date;
+            const isToday = getLocalDateString(new Date()) === date;
+            const isCurrentSelection = getLocalDateString(currentDate) === date;
 
             return (
               <div

@@ -11,7 +11,14 @@ interface MonthCalendarViewProps {
 
 export const MonthCalendarView: React.FC<MonthCalendarViewProps> = ({ shifts, users }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const today = new Date().toISOString().split('T')[0];
+  const getLocalDateString = (date: Date) => {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  };
+
+  const today = getLocalDateString(new Date());
   const [selectedDate, setSelectedDate] = useState<string | null>(today);
 
   const year = currentDate.getFullYear();
@@ -33,9 +40,11 @@ export const MonthCalendarView: React.FC<MonthCalendarViewProps> = ({ shifts, us
   }
 
   // Add all days of the month
+  // Add all days of the month
   for (let day = 1; day <= daysInMonth; day++) {
-    const date = new Date(year, month, day);
-    dates.push(date.toISOString().split('T')[0]);
+    // Construct date string manually to avoid timezone issues with toISOString
+    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    dates.push(dateStr);
   }
 
   const getShiftIcon = (type: ShiftType, size = 12) => {
@@ -125,8 +134,7 @@ export const MonthCalendarView: React.FC<MonthCalendarViewProps> = ({ shifts, us
               );
             }
 
-            const dateObj = new Date(date);
-            const dayNum = dateObj.getDate();
+            const dayNum = parseInt(date.split('-')[2], 10);
             const dayShifts = shifts.filter(s => s.date === date);
             const isToday = date === today;
             const isSelected = date === selectedDate;
@@ -226,7 +234,10 @@ export const MonthCalendarView: React.FC<MonthCalendarViewProps> = ({ shifts, us
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h3 className="text-xl font-black text-zinc-900 tracking-tight">
-                  {new Date(selectedDate).toLocaleDateString('en-US', { day: 'numeric', month: 'long', weekday: 'long' })}
+                  {(() => {
+                    const [y, m, d] = selectedDate.split('-').map(Number);
+                    return new Date(y, m - 1, d).toLocaleDateString('en-US', { day: 'numeric', month: 'long', weekday: 'long' });
+                  })()}
                 </h3>
                 <p className="text-xs font-bold text-zinc-500 uppercase tracking-widest mt-1">Daily Briefing</p>
               </div>

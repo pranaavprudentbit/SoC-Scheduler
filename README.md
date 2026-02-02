@@ -6,8 +6,9 @@ AI-powered shift management system for Security Operations Centers built with Ne
 
 - **AI-Powered Scheduling**: Automatic shift generation using Google Gemini AI
 - **Real-time Calendar View**: Visual 7-day schedule overview
-- **Shift Swap Marketplace**: Peer-to-peer shift exchange system
-- **User Preferences**: Customizable shift preferences and blackout dates
+- **Swap Shifts**: Peer-to-peer shift trade system
+- **Activity Logging**: Comprehensive log of all admin and user actions
+- **User Preferences**: Customizable shift preferences and unavailable dates
 - **Admin Dashboard**: Team management and analytics
 - **Role-Based Access**: Admin and Analyst role separation
 - **Firebase Backend**: Secure authentication and real-time database
@@ -24,137 +25,6 @@ AI-powered shift management system for Security Operations Centers built with Ne
 
 ## 📦 Quick Start
 
-1. **Clone and install:**
-```bash
-npm install
-```
-
-2. **Follow setup guide:**
-- Read `QUICK_START.md` for complete Firebase setup
-- Or read `FIREBASE_SETUP.md` for detailed Firestore configuration
-
-3. **Run development server:**
-```bash
-npm run dev
-```
-
-4. **Open in browser:**
-```
-http://localhost:3000
-```
-
-## 🔑 Environment Variables
-
-Your `.env.local` is already configured with:
-```
-FIREBASE_PROJECT_ID=soc-scheduler-c2ad9
-FIREBASE_CLIENT_EMAIL=firebase-adminsdk-fbsvc@soc-scheduler-c2ad9.iam.gserviceaccount.com
-FIREBASE_PRIVATE_KEY="..."
-GEMINI_API_KEY=...
-```
-
-## 📂 Project Structure
-
-```
-SOC/
-├── app/
-│   ├── api/
-│   │   └── generate-schedule/       # AI schedule generation endpoint
-│   │       └── route.ts          # AI schedule generation endpoint
-│   ├── components/
-│   │   ├── AdminPanel.tsx         # Admin control panel
-│   │   ├── CalendarView.tsx       # Weekly calendar display
-│   │   ├── PreferencesPanel.tsx   # User settings
-│   │   ├── Sidebar.tsx            # Navigation sidebar
-│   │   ├── SwapMarket.tsx         # Shift swap interface
-│   │   └── UserManagement.tsx     # User creation (admin only)
-│   ├── login/
-│   │   └── page.tsx               # Login page
-│   ├── globals.css                # Global styles
-│   ├── layout.tsx                 # Root layout
-│   └── page.tsx                   # Main dashboard
-├── lib/
-│   ├── firebase/
-│   │   ├── config.ts              # Firebase client config
-│   │   └── admin.ts               # Firebase Admin SDK
-│   └── types.ts                   # TypeScript type definitions
-├── QUICK_START.md                 # Setup guide (start here!)
-├── FIREBASE_SETUP.md              # Detailed Firestore info
-├── .env.local                     # Environment variables
-├── next.config.ts                 # Next.js configuration
-├── tailwind.config.ts             # Tailwind CSS configuration
-├── tsconfig.json                  # TypeScript configuration
-├── middleware.ts                  # Auth middleware
-└── package.json                   # Dependencies
-```
-
-## 🎯 How It Works
-
-### Authentication Flow
-1. Admin creates user accounts via Firebase Authentication
-2. User data stored in Firestore `users` collection
-3. Login handled by Firebase Auth (email/password)
-4. Session managed on client-side
-
-### Schedule Generation
-1. Admin clicks "Auto-Generate" in Team tab
-2. API calls Gemini AI with user preferences
-3. AI generates fair shift distribution
-4. Shifts saved to Firestore `shifts` collection
-5. Calendar updates automatically
-
-### Shift Swapping
-1. User posts shift to swap marketplace
-2. Swap request stored in Firestore
-3. Other users can accept the swap
-4. On acceptance, shift ownership transfers
-5. Both users see updated shifts immediately
-
-## 🔐 Firebase Collections
-
-Your app uses 3 Firestore collections:
-
-1. **users** - User profiles and preferences
-2. **shifts** - All scheduled shifts
-3. **swap_requests** - Shift swap marketplace
-
-See `FIREBASE_SETUP.md` for complete schema and security rules.
-
-## 📝 Default Roles
-
-- **ADMIN**: Can create users, generate schedules, manage team
-- **ANALYST**: Can view schedule, swap shifts, set preferences
-
-## 🚦 Getting Started Checklist
-
-- [ ] Read `QUICK_START.md`
-- [ ] Enable Firebase Authentication
-- [ ] Create Firestore database
-- [ ] Apply security rules
-- [ ] Create admin user
-- [ ] Run `npm run dev`
-- [ ] Login and test
-
-## 📞 Support
-
-- Check `QUICK_START.md` for step-by-step setup
-- Review `FIREBASE_SETUP.md` for Firestore details
-- Check Firebase Console for errors
-- Inspect browser console (F12) for client errors
-
-## 📄 License
-
-MIT
-
----
-
-Built with ❤️ for SOC teams using Next.js 15 + Firebase + Gemini AI
-
-
-```
-
-## 🔧 Setup Instructions
-
 ### 1. Install Dependencies
 
 ```bash
@@ -163,13 +33,17 @@ npm install
 
 ### 2. Configure Environment Variables
 
-Create or update `.env.local` with your Google Gemini API key:
+Create or update `.env.local` with your Firebase config and Google Gemini API key:
 
 ```env
-API_KEY=your_gemini_api_key_here
+FIREBASE_PROJECT_ID=...
+FIREBASE_CLIENT_EMAIL=...
+FIREBASE_PRIVATE_KEY="..."
+GEMINI_API_KEY=...
 ```
 
-Get your API key from [Google AI Studio](https://makersuite.google.com/app/apikey)
+Get your Gemini API key from [Google AI Studio](https://makersuite.google.com/app/apikey).
+See `FIREBASE_SETUP.md` for detailed Firestore configuration.
 
 ### 3. Run Development Server
 
@@ -179,59 +53,53 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-### 4. Build for Production
+## 📂 Project Structure
 
-```bash
-npm run build
-npm start
+```
+SOC/
+├── app/
+│   ├── api/               # API routes (schedule generation)
+│   ├── components/        # React components (AdminPanel, CalendarView, etc.)
+│   ├── login/             # Login page
+│   ├── globals.css        # Global styles
+│   └── page.tsx           # Main dashboard
+├── lib/
+│   ├── firebase/          # Firebase config
+│   └── types.ts           # Type definitions
+├── QUICK_START.md         # Setup guide
+├── FIREBASE_SETUP.md      # Firestore schema info
+└── package.json           # Dependencies
 ```
 
-## 🎨 UI Design
+## 🎯 How It Works
 
-The application features a clean, minimalist design with:
-- Light theme with zinc color palette
-- Responsive layout (mobile & desktop)
-- Smooth animations and transitions
-- Accessible components
+### Authentication
+1. Admin creates user accounts via Firebase Auth.
+2. Login handled by Firebase Auth.
 
-## 📱 Key Components
+### Schedule Generation
+1. Admin clicks "Generate Schedule" in the Dashboard.
+2. AI generates a fair shift distribution based on preferences and availability.
+3. Shifts are saved to Firestore and the calendar updates automatically.
 
-### Dashboard
-- Quick stats overview
-- Next shift information
-- Weekly calendar view
+### Swap Shifts
+1. User posts a request to "Swap Shifts".
+2. Other users can accept the swap.
+3. Ownership transfers immediately upon acceptance.
 
-### Admin Panel
-- AI-powered schedule generation
-- Team statistics
-- Shift distribution charts
-
-### Swap Market
-- Post shift swap requests
-- Browse available swaps
-- Accept/decline requests
-
-### Preferences
-- Select preferred shifts
-- Set blackout dates
-- Update personal settings
+### Activity Logging
+1. All key actions (e.g., assigning shifts, updating roles, swapping) are logged.
+2. Admins can view the full history in the "Logs" tab of the dashboard.
 
 ## 🔐 User Roles
 
-- **Admin**: Full access including team management and AI scheduling
-- **Analyst**: Standard access to calendar, swaps, and preferences
-
-## 🤝 Contributing
-
-This is a demo project. Feel free to fork and customize for your needs.
+- **ADMIN**: Can create users, generate schedules, manage the team, and view activity logs.
+- **ANALYST**: Can view the schedule, swap shifts, and set preferences.
 
 ## 📄 License
 
 MIT
 
-## 🙏 Acknowledgments
+---
 
-- Built with Next.js and React
-- Icons by Lucide React
-- Charts by Recharts
-- AI by Google Gemini
+Built with ❤️ for SOC teams using Next.js 15 + Firebase + Gemini AI

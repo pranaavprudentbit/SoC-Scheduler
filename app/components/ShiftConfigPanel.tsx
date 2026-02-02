@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Clock, Save, RotateCcw, AlertCircle } from 'lucide-react';
-import { db } from '@/lib/firebase/config';
+import { db, auth } from '@/lib/firebase/config';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { ShiftConfiguration, DEFAULT_SHIFT_CONFIG, ShiftTiming } from '@/lib/shiftConfig';
 
@@ -33,6 +33,19 @@ export const ShiftConfigPanel: React.FC = () => {
     try {
       await setDoc(doc(db, 'system_config', 'shift_timings'), config);
       alert('✅ Shift timings saved! AI will use these timings for future schedule generation.');
+
+      // Log configuration change
+      const user = auth.currentUser;
+      if (user) {
+        await import('@/lib/logger').then(m => m.logActivity(
+          user.uid,
+          user.email || 'Admin',
+          'System Config Updated',
+          'Updated shift timing configurations',
+          'OTHER'
+        ));
+      }
+
     } catch (error) {
       console.error('Error saving config:', error);
       alert('❌ Failed to save configuration');
@@ -44,6 +57,18 @@ export const ShiftConfigPanel: React.FC = () => {
   const handleReset = () => {
     if (confirm('Reset all shift timings to default values?')) {
       setConfig(DEFAULT_SHIFT_CONFIG);
+
+      // Log reset
+      const user = auth.currentUser;
+      if (user) {
+        import('@/lib/logger').then(m => m.logActivity(
+          user.uid,
+          user.email || 'Admin',
+          'System Config Reset',
+          'Reset shift timings to default',
+          'OTHER'
+        ));
+      }
     }
   };
 
@@ -129,8 +154,8 @@ export const ShiftConfigPanel: React.FC = () => {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h3 className="text-2xl font-bold text-zinc-900 mb-2">Shift Timing Configuration</h3>
-        <p className="text-zinc-500 text-sm">Customize shift timings and break schedules. AI will use these when generating schedules.</p>
+        <h3 className="text-2xl font-bold text-zinc-900 mb-2">Shift Times</h3>
+        <p className="text-zinc-500 text-sm">Set start and end times for each shift. Used for auto-scheduling.</p>
       </div>
 
       {/* Info Banner */}
@@ -138,12 +163,12 @@ export const ShiftConfigPanel: React.FC = () => {
         <div className="flex items-start gap-3">
           <AlertCircle className="text-blue-600 mt-0.5" size={20} />
           <div>
-            <h4 className="text-sm font-semibold text-blue-900 mb-1">Important Notes</h4>
+            <h4 className="text-sm font-semibold text-blue-900 mb-1">Important</h4>
             <ul className="text-xs text-blue-700 space-y-1">
-              <li>• Changes apply to <strong>future AI-generated schedules</strong></li>
-              <li>• Existing shifts are <strong>not affected</strong></li>
-              <li>• Manual shifts always respect the timing you set when creating them</li>
-              <li>• Ensure shift timings don't overlap to avoid scheduling conflicts</li>
+              <li>• Changes apply to <strong>future schedules</strong></li>
+              <li>• Existing shifts stay the same</li>
+              <li>• Manual shifts always use your chosen time</li>
+              <li>• Make sure shift times don't overlap</li>
             </ul>
           </div>
         </div>

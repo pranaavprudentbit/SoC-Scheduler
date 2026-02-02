@@ -59,6 +59,7 @@ export async function POST(request: NextRequest) {
             email,
             role: role || 'ANALYST',
             isAdmin: isAdmin || false,
+            isActive: true,
             avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}`,
             preferredDays: [],
             preferredShifts: [],

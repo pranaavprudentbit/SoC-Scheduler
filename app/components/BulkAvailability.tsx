@@ -126,8 +126,8 @@ export const BulkAvailability: React.FC<BulkAvailabilityProps> = ({ currentUser,
       {/* Strategic Availability Metrices */}
       <div className="grid grid-cols-2 gap-4">
         {[
-          { label: 'Days Restricted', value: activeBlocksCount, sub: 'Future Active Blocks', icon: Calendar, color: 'text-indigo-600', bg: 'bg-indigo-50 border-indigo-100' },
-          { label: 'Full Log', value: unavailableDates.length, sub: 'Total Record Count', icon: AlertCircle, color: 'text-amber-600', bg: 'bg-amber-50 border-amber-100' }
+          { label: 'Blocked Days', value: activeBlocksCount, sub: 'Future Blocks', icon: Calendar, color: 'text-indigo-600', bg: 'bg-indigo-50 border-indigo-100' },
+          { label: 'Total Logs', value: unavailableDates.length, sub: 'All Records', icon: AlertCircle, color: 'text-amber-600', bg: 'bg-amber-50 border-amber-100' }
         ].map((item, idx) => (
           <div key={idx} className={`bg-white border rounded-[2.5rem] p-6 shadow-sm transition-all hover:shadow-md ${item.bg}`}>
             <div className="flex items-center justify-between mb-4">
@@ -149,7 +149,7 @@ export const BulkAvailability: React.FC<BulkAvailabilityProps> = ({ currentUser,
       >
         <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 to-indigo-600/20 opacity-0 group-hover:opacity-100 transition-opacity" />
         <Plus size={20} strokeWidth={4} />
-        Generate Restriction Block
+        Mark Unavailable Days
       </button>
 
       {/* Strategic Restriction Generator Modal */}
@@ -168,7 +168,7 @@ export const BulkAvailability: React.FC<BulkAvailabilityProps> = ({ currentUser,
 
               <div className="space-y-6">
                 <div className="space-y-2">
-                  <label className="block text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1">Initiation Date</label>
+                  <label className="block text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1">Start Date</label>
                   <input
                     type="date"
                     value={formData.startDate}
@@ -178,44 +178,46 @@ export const BulkAvailability: React.FC<BulkAvailabilityProps> = ({ currentUser,
                 </div>
 
                 <div className="space-y-2">
-                  <label className="block text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1">Termination Date</label>
-                  <input
-                    type="date"
-                    value={formData.endDate}
-                    onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                    className="w-full bg-zinc-50 border-2 border-zinc-100 text-zinc-900 px-6 py-4 rounded-2xl font-black text-xs outline-none focus:border-blue-600 focus:bg-white transition-all uppercase tracking-widest"
-                  />
-                </div>
+                  <div className="space-y-2">
+                    <label className="block text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1">End Date</label>
+                    <input
+                      type="date"
+                      value={formData.endDate}
+                      onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                      className="w-full bg-zinc-50 border-2 border-zinc-100 text-zinc-900 px-6 py-4 rounded-2xl font-black text-xs outline-none focus:border-blue-600 focus:bg-white transition-all uppercase tracking-widest"
+                    />
+                  </div>
 
-                <div className="space-y-2">
-                  <label className="block text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1">Exemption Rationale</label>
-                  <select
-                    value={formData.reason}
-                    onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
-                    className="w-full bg-zinc-50 border-2 border-zinc-100 text-zinc-900 px-6 py-4 rounded-2xl font-black text-xs outline-none focus:border-blue-600 focus:bg-white transition-all appearance-none cursor-pointer"
-                  >
-                    <option value="">SELECT PARAMETER...</option>
-                    <option value="Vacation">ANNUAL LEAVE</option>
-                    <option value="Sick Leave">MEDICAL EXEMPTION</option>
-                    <option value="Personal">PERSONAL CYCLE</option>
-                    <option value="Other">OTHER PROTOCOL</option>
-                  </select>
-                </div>
+                  <div className="space-y-2">
+                    <label className="block text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1">Reason</label>
+                    <select
+                      value={formData.reason}
+                      onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
+                      className="w-full bg-zinc-50 border-2 border-zinc-100 text-zinc-900 px-6 py-4 rounded-2xl font-black text-xs outline-none focus:border-blue-600 focus:bg-white transition-all appearance-none cursor-pointer"
+                    >
+                      <option value="">Choose a reason...</option>
+                      <option value="Vacation">Vacation</option>
+                      <option value="Sick Leave">Sick Leave</option>
+                      <option value="Personal">Personal</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
 
-                <div className="grid grid-cols-2 gap-3 pt-6">
-                  <button
-                    onClick={() => setShowModal(false)}
-                    className="px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest text-zinc-400 hover:text-zinc-900 transition-colors"
-                  >
-                    Abort Entry
-                  </button>
-                  <button
-                    onClick={handleBlockDates}
-                    disabled={loading}
-                    className="bg-zinc-900 text-white px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all shadow-xl disabled:bg-zinc-100 disabled:text-zinc-300"
-                  >
-                    {loading ? 'SYNCHRONIZING...' : 'COMMIT BLOCK'}
-                  </button>
+                  <div className="grid grid-cols-2 gap-3 pt-6">
+                    <button
+                      onClick={() => setShowModal(false)}
+                      className="px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest text-zinc-400 hover:text-zinc-900 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleBlockDates}
+                      disabled={loading}
+                      className="bg-zinc-900 text-white px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all shadow-xl disabled:bg-zinc-100 disabled:text-zinc-300"
+                    >
+                      {loading ? 'Saving...' : 'Save Block'}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -228,8 +230,8 @@ export const BulkAvailability: React.FC<BulkAvailabilityProps> = ({ currentUser,
         {Object.entries(groupedByReason).length === 0 ? (
           <div className="py-24 text-center bg-zinc-50/50 border-2 border-dashed border-zinc-100 rounded-[3rem]">
             <CheckCircle2 className="mx-auto text-emerald-300 mb-6" size={56} />
-            <p className="text-xs font-black text-zinc-400 uppercase tracking-[0.3em]">Operational Readiness 100%</p>
-            <p className="text-[10px] text-zinc-400 font-bold mt-2 uppercase tracking-tight">Deployment path clear of restrictions</p>
+            <p className="text-xs font-black text-zinc-400 uppercase tracking-[0.3em]">No restrictions</p>
+            <p className="text-[10px] text-zinc-400 font-bold mt-2 uppercase tracking-tight">Everyone is available</p>
           </div>
         ) : (
           Object.entries(groupedByReason).map(([reason, dates]) => (
@@ -239,7 +241,7 @@ export const BulkAvailability: React.FC<BulkAvailabilityProps> = ({ currentUser,
                   <AlertCircle size={16} strokeWidth={3} />
                 </div>
                 <h4 className="text-[10px] font-black text-zinc-900 uppercase tracking-[0.2em]">
-                  {reason.toUpperCase()} <span className="text-zinc-400 ml-2 font-bold">// {dates.length} LOGS</span>
+                  {reason.toUpperCase()} <span className="text-zinc-400 ml-2 font-bold">// {dates.length} RECORDS</span>
                 </h4>
                 <div className="flex-1 h-[1px] bg-zinc-100" />
               </div>

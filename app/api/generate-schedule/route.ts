@@ -21,12 +21,14 @@ export async function POST(request: NextRequest) {
     const { DEFAULT_SHIFT_CONFIG } = await import('@/lib/shiftConfig');
     const config = shiftConfig || DEFAULT_SHIFT_CONFIG;
 
-    // Prepare context for the model
-    const userContext = users.map((u: User) => ({
-      id: u.id,
-      name: u.name,
-      prefs: u.preferences,
-    }));
+    // Prepare context for the model - only include ACTIVE users
+    const userContext = users
+      .filter((u: User) => u.isActive !== false)
+      .map((u: User) => ({
+        id: u.id,
+        name: u.name,
+        prefs: u.preferences,
+      }));
 
     const prompt = `
     You are an expert SOC Shift Manager. Generate a fair schedule for ${days} days starting from ${startDate}.

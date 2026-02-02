@@ -88,9 +88,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           <AlertTriangle size={48} className="text-red-500 mx-auto" strokeWidth={2.5} />
         </div>
         <div className="space-y-2">
-          <h2 className="text-2xl font-black text-zinc-900 tracking-tight">Desktop Only Terminal</h2>
+          <h2 className="text-2xl font-black text-zinc-900 tracking-tight">Use a Computer</h2>
           <p className="text-zinc-500 text-sm font-medium leading-relaxed max-w-xs">
-            The Admin Dashboard requires a full-scale viewport for complex logistics and management operations.
+            This page is too big for your phone. Please use a computer.
           </p>
         </div>
         <div className="pt-4">
@@ -106,8 +106,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     <div className="space-y-8 max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex flex-col items-center justify-center gap-2 pb-6 border-b border-zinc-200 text-center">
-        <h2 className="text-3xl font-black text-zinc-900 tracking-tight leading-none">Admin Dashboard</h2>
-        <p className="text-zinc-500 text-sm font-medium uppercase tracking-widest">Full control over schedules, users, and leave requests</p>
+        <h2 className="text-3xl font-black text-zinc-900 tracking-tight leading-none">Dashboard</h2>
+        <p className="text-zinc-500 text-sm font-medium uppercase tracking-widest">Manage everything here</p>
       </div>
 
       {/* Navigation Tabs - Modern Segmented Control */}

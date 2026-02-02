@@ -2,8 +2,8 @@
 
 import React, { useState } from 'react';
 import { User, Shift, ShiftType } from '@/lib/types';
-import { ChevronLeft, ChevronRight, Plus, Edit2, Trash2, Sun, Sunset, Moon, Calendar } from 'lucide-react';
-import { db } from '@/lib/firebase/config';
+import { ChevronLeft, ChevronRight, Plus, Edit2, Trash2, Sun, Sunset, Moon, Calendar, Users, CheckCircle2, XCircle } from 'lucide-react';
+import { db, auth } from '@/lib/firebase/config';
 import { collection, addDoc, updateDoc, deleteDoc, doc, query, where, getDocs } from 'firebase/firestore';
 
 interface AdminCalendarShiftManagerProps {
@@ -24,8 +24,9 @@ export const AdminCalendarShiftManager: React.FC<AdminCalendarShiftManagerProps>
     return new Date(today.setDate(diff));
   });
 
-  const [editingShift, setEditingShift] = useState<{ date: string; type: ShiftType; shift?: Shift } | null>(null);
-  const [selectedUser, setSelectedUser] = useState<string>(users[0]?.id || '');
+
+  const [selectedUser, setSelectedUser] = useState<string>(users.find(u => u.isActive !== false)?.id || '');
+  const [showInactive, setShowInactive] = useState(false);
 
   const getWeekDates = () => {
     const dates = [];
@@ -62,72 +63,90 @@ export const AdminCalendarShiftManager: React.FC<AdminCalendarShiftManagerProps>
   };
 
   const handleAssignShift = async (date: Date, type: ShiftType) => {
+    if (!selectedUser) {
+      alert("Please select a user from the Members Bank first.");
+      return;
+    }
+
+    const user = users.find(u => u.id === selectedUser);
+    if (user?.isActive === false) {
+      alert("Cannot assign an inactive user.");
+      return;
+    }
+
     const dateStr = date.toISOString().split('T')[0];
     const existingShift = getShiftForDateAndType(date, type);
 
-    if (existingShift) {
-      setEditingShift({ date: dateStr, type, shift: existingShift });
-      setSelectedUser(existingShift.userId);
-    } else {
-      setEditingShift({ date: dateStr, type });
-      setSelectedUser(users[0]?.id || '');
-    }
-  };
-
-  const handleSaveShift = async () => {
-    if (!editingShift) return;
+    const breaks = getDefaultBreaks(type);
 
     try {
-      // Check for availability blocks
-      const availabilityQuery = query(
-        collection(db, 'user_availability'),
-        where('userId', '==', selectedUser),
-        where('date', '==', editingShift.date)
-      );
-
-      const availabilitySnapshot = await getDocs(availabilityQuery);
-
-      if (!availabilitySnapshot.empty) {
-        // Get reason if available
-        const blockData = availabilitySnapshot.docs[0].data();
-        alert(`❌ Cannot assign shift: User is unavailable on this date.\nReason: ${blockData.reason || 'Blocked'}`);
-        return;
-      }
-
-      const breaks = getDefaultBreaks(editingShift.type);
-
-      if (editingShift.shift) {
-        // Update existing shift
-        const shiftRef = doc(db, 'shifts', editingShift.shift.id);
+      if (existingShift) {
+        const shiftRef = doc(db, 'shifts', existingShift.id);
         await updateDoc(shiftRef, {
           userId: selectedUser,
           ...breaks,
-          manuallyCreated: true, // Mark as manually edited
+          manuallyCreated: true,
         });
+
+        // Log update
+        const currentUser = auth.currentUser;
+        if (currentUser) {
+          await import('@/lib/logger').then(m => m.logActivity(
+            currentUser.uid,
+            currentUser.email || 'Admin',
+            'Shift Updated',
+            `Assigned ${type} shift on ${dateStr} to ${user?.name}`,
+            'SHIFT_UPDATE'
+          ));
+        }
+
       } else {
-        // Create new shift
         await addDoc(collection(db, 'shifts'), {
-          date: editingShift.date,
-          shift: editingShift.type,
+          date: dateStr,
+          shift: type,
           userId: selectedUser,
           ...breaks,
-          manuallyCreated: true, // Mark as manually created
+          manuallyCreated: true,
           createdAt: new Date().toISOString(),
         });
-      }
 
-      setEditingShift(null);
+        // Log creation
+        const currentUser = auth.currentUser;
+        if (currentUser) {
+          await import('@/lib/logger').then(m => m.logActivity(
+            currentUser.uid,
+            currentUser.email || 'Admin',
+            'Shift Assigned',
+            `Created ${type} shift on ${dateStr} for ${user?.name}`,
+            'SHIFT_UPDATE'
+          ));
+        }
+      }
       onRefresh();
     } catch (error) {
-      console.error('Error saving shift:', error);
+      console.error('Error saving shift via click:', error);
     }
   };
 
+
+
   const handleDeleteShift = async (shift: Shift) => {
-    if (!confirm('Are you sure you want to delete this shift?')) return;
 
     try {
       await deleteDoc(doc(db, 'shifts', shift.id));
+
+      // Log deletion
+      const currentUser = auth.currentUser;
+      if (currentUser) {
+        await import('@/lib/logger').then(m => m.logActivity(
+          currentUser.uid,
+          currentUser.email || 'Admin',
+          'Shift Deleted',
+          `Removed ${shift.type} shift on ${shift.date}`,
+          'SHIFT_UPDATE'
+        ));
+      }
+
       onRefresh();
     } catch (error) {
       console.error('Error deleting shift:', error);
@@ -150,27 +169,205 @@ export const AdminCalendarShiftManager: React.FC<AdminCalendarShiftManagerProps>
     }
   };
 
+  const handleDragStart = (e: React.DragEvent, userId: string) => {
+    e.dataTransfer.setData('userId', userId);
+  };
+
+  const handleDrop = async (e: React.DragEvent, date: Date, type: ShiftType) => {
+    e.preventDefault();
+    const userId = e.dataTransfer.getData('userId');
+    if (!userId) return;
+
+    const dateStr = date.toISOString().split('T')[0];
+    const existingShift = getShiftForDateAndType(date, type);
+
+    // Check for availability blocks
+    const availabilityQuery = query(
+      collection(db, 'user_availability'),
+      where('userId', '==', userId),
+      where('date', '==', dateStr)
+    );
+
+    const availabilitySnapshot = await getDocs(availabilityQuery);
+
+    if (!availabilitySnapshot.empty) {
+      const blockData = availabilitySnapshot.docs[0].data();
+      alert(`❌ Cannot assign shift: User is unavailable on this date.\nReason: ${blockData.reason || 'Blocked'}`);
+      return;
+    }
+
+    const breaks = getDefaultBreaks(type);
+
+    try {
+      if (existingShift) {
+        const shiftRef = doc(db, 'shifts', existingShift.id);
+        await updateDoc(shiftRef, {
+          userId: userId,
+          ...breaks,
+          manuallyCreated: true,
+        });
+
+        // Log update
+        const currentUser = auth.currentUser;
+        if (currentUser) {
+          await import('@/lib/logger').then(m => m.logActivity(
+            currentUser.uid,
+            currentUser.email || 'Admin',
+            'Shift Updated (Drag)',
+            `Reassigned ${type} shift on ${dateStr} to ${getUserById(userId)?.name}`,
+            'SHIFT_UPDATE'
+          ));
+        }
+
+      } else {
+        await addDoc(collection(db, 'shifts'), {
+          date: dateStr,
+          shift: type,
+          userId: userId,
+          ...breaks,
+          manuallyCreated: true,
+          createdAt: new Date().toISOString(),
+        });
+
+        // Log creation
+        const currentUser = auth.currentUser;
+        if (currentUser) {
+          await import('@/lib/logger').then(m => m.logActivity(
+            currentUser.uid,
+            currentUser.email || 'Admin',
+            'Shift Assigned (Drag)',
+            `Created ${type} shift on ${dateStr} for ${getUserById(userId)?.name}`,
+            'SHIFT_UPDATE'
+          ));
+        }
+      }
+      onRefresh();
+    } catch (error) {
+      console.error('Error saving shift via drop:', error);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
   const getUserById = (userId: string) => users.find(u => u.id === userId);
 
   return (
     <div className="space-y-6">
-      {/* Info Banner */}
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4">
-        <div className="flex items-start gap-3">
-          <div className="text-blue-600 mt-0.5">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
+      {/* Members Bank */}
+      <div className="bg-white border border-zinc-200 rounded-[2rem] p-8 shadow-xl relative overflow-hidden">
+        {/* Decorative Background Element */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-blue-50/50 rounded-full blur-3xl -mr-32 -mt-32 -z-10" />
+
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-8">
           <div>
-            <h4 className="text-sm font-semibold text-blue-900 mb-1">Smart Shift Protection</h4>
-            <p className="text-xs text-blue-700">
-              Shifts you create or edit manually are marked as 🔒 Protected. The AI scheduler will respect these shifts and won't override them.
-              Only you can modify or delete protected shifts.
+            <div className="flex items-center gap-2 mb-1">
+              <div className="p-2 bg-blue-100 rounded-lg text-blue-600">
+                <Users size={20} />
+              </div>
+              <h4 className="text-xl font-black text-zinc-900 tracking-tight">Team Members</h4>
+            </div>
+            <p className="text-xs font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-2">
+              <span className="flex h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+              {users.filter(u => u.isActive !== false).length} Active Users
+            </p>
+          </div>
+
+          <button
+            onClick={() => setShowInactive(!showInactive)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${showInactive ? 'bg-zinc-900 text-white' : 'bg-zinc-100 text-zinc-500 hover:bg-zinc-200'
+              }`}
+          >
+            {showInactive ? 'Hide Inactive' : 'Show Inactive'}
+          </button>
+        </div>
+
+        <div className="space-y-8">
+          {/* Active Members - Primary Bank */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+            {users
+              .filter(u => u.isActive !== false)
+              .map(user => {
+                const isSelected = selectedUser === user.id;
+                return (
+                  <div
+                    key={user.id}
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, user.id)}
+                    onClick={() => setSelectedUser(user.id)}
+                    className={`group flex items-center gap-3 p-3 border transition-all duration-300 cursor-pointer relative
+                      ${isSelected
+                        ? 'bg-zinc-900 border-zinc-900 text-white shadow-2xl scale-[1.05] z-10'
+                        : 'bg-white border-zinc-200 text-zinc-700 hover:border-blue-400 hover:shadow-lg hover:-translate-y-0.5'
+                      } rounded-[1.25rem]`}
+                  >
+                    <div className="relative">
+                      <img src={user.avatar} alt="" className={`w-10 h-10 rounded-full border-2 ${isSelected ? 'border-zinc-700' : 'border-white'} shadow-sm`} />
+                      <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-2 border-white rounded-full" />
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-xs font-black truncate">{user.name}</span>
+                      <span className={`text-[8px] font-black uppercase tracking-widest ${isSelected ? 'text-zinc-500' : 'text-zinc-400'}`}>
+                        {user.role}
+                      </span>
+                    </div>
+                    {isSelected && (
+                      <div className="absolute -top-1.5 -right-1.5 bg-blue-500 text-white p-1 rounded-full shadow-lg">
+                        <CheckCircle2 size={10} strokeWidth={3} />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+          </div>
+
+          {/* Inactive Members - Collapsible Section */}
+          {showInactive && (
+            <div className="pt-8 border-t border-dashed border-zinc-200 animate-in fade-in slide-in-from-top-4 duration-500">
+              <div className="flex items-center gap-2 mb-4">
+                <h5 className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em]">Inactive Users</h5>
+                <div className="flex-1 h-px bg-zinc-100" />
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+                {users
+                  .filter(u => u.isActive === false)
+                  .map(user => (
+                    <div
+                      key={user.id}
+                      className="flex items-center gap-3 p-3 bg-zinc-50/50 border border-zinc-100 rounded-[1.25rem] opacity-60 grayscale cursor-not-allowed"
+                    >
+                      <img src={user.avatar} alt="" className="w-10 h-10 rounded-full border-2 border-white shadow-sm" />
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-xs font-black text-zinc-400 truncate">{user.name}</span>
+                        <div className="flex items-center gap-1">
+                          <XCircle size={8} className="text-zinc-400" />
+                          <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest">Inactive</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                {users.filter(u => u.isActive === false).length === 0 && (
+                  <div className="col-span-full py-4 text-center">
+                    <p className="text-[10px] font-black text-zinc-300 uppercase tracking-widest italic">All team members are currently active</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="mt-8 flex items-center justify-center">
+          <div className="flex items-center gap-3 px-6 py-2 bg-blue-50/50 rounded-full border border-blue-100">
+            <span className="flex h-1.5 w-1.5 rounded-full bg-blue-500 animate-pulse" />
+            <p className="text-[9px] font-black text-blue-600 uppercase tracking-widest m-0">
+              Select a member, then click a calendar slot to assign.
             </p>
           </div>
         </div>
       </div>
+
+
 
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -252,7 +449,9 @@ export const AdminCalendarShiftManager: React.FC<AdminCalendarShiftManagerProps>
                 return (
                   <div
                     key={idx}
-                    className={`p-2 border-l border-zinc-200 min-h-[80px] sm:min-h-[100px] ${isToday ? 'bg-blue-50/30' : ''}`}
+                    onDragOver={handleDragOver}
+                    onDrop={(e) => handleDrop(e, date, shiftType)}
+                    className={`p-2 border-l border-zinc-200 min-h-[80px] sm:min-h-[100px] ${isToday ? 'bg-blue-50/30' : ''} transition-colors hover:bg-zinc-50/50`}
                   >
                     {shift && user ? (
                       <div className={`h-full rounded-lg border p-2 ${getShiftColor(shiftType)} group relative transition-all hover:shadow-md`}>
@@ -309,52 +508,8 @@ export const AdminCalendarShiftManager: React.FC<AdminCalendarShiftManagerProps>
         </div>
       </div>
 
-      {/* Edit Modal */}
-      {editingShift && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200">
-            <h4 className="text-xl font-bold text-zinc-900 mb-4">
-              {editingShift.shift ? 'Edit' : 'Assign'} {editingShift.type} Shift
-            </h4>
+      {/* Edit Modal - Removed as per user request for faster click-to-assign */}
 
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-zinc-700 mb-2">
-                  Date: {new Date(editingShift.date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
-                </label>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-zinc-700 mb-2">Assign to:</label>
-                <select
-                  value={selectedUser}
-                  onChange={(e) => setSelectedUser(e.target.value)}
-                  className="w-full px-4 py-3 border border-zinc-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  {users.map(u => (
-                    <option key={u.id} value={u.id}>{u.name}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="flex gap-3 pt-4">
-                <button
-                  onClick={() => setEditingShift(null)}
-                  className="flex-1 px-4 py-3 border border-zinc-300 rounded-xl text-sm font-semibold text-zinc-700 hover:bg-zinc-50 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleSaveShift}
-                  className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition-colors"
-                >
-                  {editingShift.shift ? 'Update' : 'Assign'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

@@ -74,7 +74,7 @@ export async function DELETE(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
     try {
-        const { userId, role, isAdmin } = await request.json();
+        const { userId, role, isAdmin, isActive } = await request.json();
 
         if (!userId) {
             return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
@@ -102,6 +102,7 @@ export async function PATCH(request: NextRequest) {
         const updateData: any = {};
         if (role) updateData.role = role;
         if (typeof isAdmin === 'boolean') updateData.isAdmin = isAdmin;
+        if (typeof isActive === 'boolean') updateData.isActive = isActive;
 
         await db.collection('users').doc(userId).update(updateData);
 

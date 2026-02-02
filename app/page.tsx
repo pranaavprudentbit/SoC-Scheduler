@@ -44,8 +44,9 @@ export default function Home() {
             id: doc.id,
             name: data.name,
             role: data.role as Role,
-            isAdmin: data.isAdmin === true, // Read isAdmin from database
+            isAdmin: data.isAdmin === true,
             avatar: data.avatar || `https://picsum.photos/seed/${doc.id}/200`,
+            isActive: data.isActive !== false,
             preferences: {
               preferredDays: data.preferredDays || [],
               preferredShifts: data.preferredShifts || [],
@@ -166,6 +167,7 @@ export default function Home() {
           role: data.role as Role,
           isAdmin: data.isAdmin === true,
           avatar: data.avatar || `https://picsum.photos/seed/${doc.id}/200`,
+          isActive: data.isActive !== false,
           preferences: {
             preferredDays: data.preferredDays || [],
             preferredShifts: data.preferredShifts || [],

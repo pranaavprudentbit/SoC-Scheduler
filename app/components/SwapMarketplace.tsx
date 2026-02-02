@@ -2,9 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { User, Shift, SwapRequest, ShiftType } from '@/lib/types';
-import { RefreshCw, Plus, X, Check, Calendar, Clock, MessageSquare } from 'lucide-react';
+import { RefreshCw, Plus, X, Check, Calendar, Clock, MessageSquare, ArrowRightLeft } from 'lucide-react';
 import { db } from '@/lib/firebase/config';
-import { collection, addDoc, updateDoc, doc, getDocs, deleteDoc } from 'firebase/firestore';
+import { collection, addDoc, updateDoc, doc, getDocs, deleteDoc, query } from 'firebase/firestore';
 
 interface SwapMarketplaceProps {
   currentUser: User;
@@ -21,12 +21,16 @@ export const SwapMarketplace: React.FC<SwapMarketplaceProps> = ({
 }) => {
   const [swapRequests, setSwapRequests] = useState<SwapRequest[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [selectedShift, setSelectedShift] = useState<string>('');
-  const [reason, setReason] = useState('');
+  const [showForm, setShowForm] = useState(false);
+  const [formData, setFormData] = useState({
+    date: '',
+    shiftType: '',
+    targetDate: '',
+    reason: ''
+  });
   const [activeTab, setActiveTab] = useState<'available' | 'myRequests' | 'myOffers'>('available');
 
-  const myShifts = shifts.filter(s => s.userId === currentUser.id && s.date >= new Date().toISOString().split('T')[0]);
+
 
   useEffect(() => {
     fetchSwapRequests();
@@ -35,8 +39,9 @@ export const SwapMarketplace: React.FC<SwapMarketplaceProps> = ({
   const fetchSwapRequests = async () => {
     try {
       const swapsRef = collection(db, 'swap_requests');
-      const snapshot = await getDocs(swapsRef);
-      const swaps = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SwapRequest));
+      const q = query(swapsRef);
+      const snapshot = await getDocs(q);
+      const swaps = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any)); // as any to accommodate new fields temporarily
       setSwapRequests(swaps);
     } catch (error) {
       console.error('Error fetching swap requests:', error);
@@ -46,13 +51,23 @@ export const SwapMarketplace: React.FC<SwapMarketplaceProps> = ({
   };
 
   const handleCreateSwap = async () => {
-    if (!selectedShift) {
+    if (!formData.date || !formData.shiftType) {
+      alert('Please select a date and shift type');
       return;
     }
 
     try {
-      const shift = shifts.find(s => s.id === selectedShift);
-      if (!shift) return;
+      // Find the user's shift that matches the selected date and type
+      const shift = shifts.find(
+        s => s.userId === currentUser.id &&
+          s.date === formData.date &&
+          s.type === formData.shiftType
+      );
+
+      if (!shift) {
+        alert('You do not have a shift on this date/time to swap.');
+        return;
+      }
 
       await addDoc(collection(db, 'swap_requests'), {
         requesterId: currentUser.id,
@@ -61,13 +76,23 @@ export const SwapMarketplace: React.FC<SwapMarketplaceProps> = ({
         targetShiftDate: shift.date,
         targetShiftType: shift.type,
         status: 'PENDING',
-        reason: reason || 'No reason provided',
+        reason: formData.reason || 'No reason provided',
         createdAt: new Date().toISOString(),
+        // We can optionally store the wanted date if we update the type later
+        // wantedDate: formData.targetDate 
       });
 
-      setShowCreateModal(false);
-      setSelectedShift('');
-      setReason('');
+      // Log swap request
+      await import('@/lib/logger').then(m => m.logActivity(
+        currentUser.id,
+        currentUser.name,
+        'Swap Requested',
+        `Posted request to swap ${shift.type} shift on ${shift.date}`,
+        'SWAP_REQUEST'
+      ));
+
+      setShowForm(false);
+      setFormData({ date: '', shiftType: '', targetDate: '', reason: '' });
       fetchSwapRequests();
     } catch (error) {
       console.error('Error creating swap request:', error);
@@ -98,6 +123,17 @@ export const SwapMarketplace: React.FC<SwapMarketplaceProps> = ({
 
       fetchSwapRequests();
       onRefresh();
+
+      // Log swap acceptance
+      const requester = users.find(u => u.id === swapRequest.requesterId);
+      await import('@/lib/logger').then(m => m.logActivity(
+        currentUser.id,
+        currentUser.name,
+        'Swap Accepted',
+        `Accepted swap from ${requester?.name || 'Unknown'} for ${targetShift.type} shift on ${targetShift.date}`,
+        'SWAP_REQUEST'
+      ));
+
     } catch (error) {
       console.error('Error accepting swap:', error);
     }
@@ -109,6 +145,16 @@ export const SwapMarketplace: React.FC<SwapMarketplaceProps> = ({
     try {
       await deleteDoc(doc(db, 'swap_requests', swapId));
       fetchSwapRequests();
+
+      // Log swap cancellation
+      await import('@/lib/logger').then(m => m.logActivity(
+        currentUser.id,
+        currentUser.name,
+        'Swap Request Cancelled',
+        'Cancelled a posted swap request',
+        'SWAP_REQUEST'
+      ));
+
     } catch (error) {
       console.error('Error cancelling swap:', error);
     }
@@ -166,17 +212,21 @@ export const SwapMarketplace: React.FC<SwapMarketplaceProps> = ({
   return (
     <div className="space-y-6">
       {/* Header & Actions */}
-      <div className="flex flex-col items-center justify-center gap-6 pb-8 border-b border-zinc-200 text-center">
+      <div className="flex flex-col md:flex-row items-center justify-between gap-6 pb-6 border-b border-zinc-200">
         <div>
-          <h3 className="text-3xl font-black text-zinc-900 tracking-tight">Swap Market</h3>
-          <p className="text-zinc-500 text-sm font-medium mt-1 uppercase tracking-widest">Trade shifts with your teammates</p>
+          <h2 className="text-3xl font-black text-zinc-900 tracking-tight flex items-center gap-3">
+            <ArrowRightLeft className="text-zinc-900" size={32} />
+            Swap Shifts
+          </h2>
+          <p className="text-zinc-500 font-medium text-sm mt-1 uppercase tracking-widest">Trade shifts with teammates</p>
         </div>
+
         <button
-          onClick={() => setShowCreateModal(true)}
-          className="flex items-center justify-center gap-2 px-8 py-4 bg-blue-600 text-white rounded-2xl text-sm font-black hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 active:scale-95 w-full sm:w-auto"
+          onClick={() => setShowForm(!showForm)}
+          className="flex items-center gap-2 px-6 py-3 bg-zinc-900 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-black transition-all shadow-xl hover:shadow-2xl active:scale-95"
         >
-          <Plus size={20} />
-          Post Swap
+          {showForm ? <X size={18} strokeWidth={3} /> : <Plus size={18} strokeWidth={3} />}
+          {showForm ? 'Cancel' : 'Ask for Swap'}
         </button>
       </div>
 
@@ -245,31 +295,27 @@ export const SwapMarketplace: React.FC<SwapMarketplaceProps> = ({
                         </span>
                       </div>
 
-                      <div className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg border ${getShiftColor(swap.targetShiftType)} mb-3`}>
-                        <span className="text-lg">{getShiftIcon(swap.targetShiftType)}</span>
-                        <div>
-                          <div className="text-sm font-bold">{swap.targetShiftType} Shift</div>
-                          <div className="text-xs">
-                            {new Date(swap.targetShiftDate).toLocaleDateString('en-US', {
-                              weekday: 'short',
-                              month: 'short',
-                              day: 'numeric'
-                            })}
-                          </div>
-                        </div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="px-2 py-0.5 bg-zinc-100 rounded text-[10px] font-black text-zinc-500 uppercase tracking-widest">
+                          {swap.targetShiftType}
+                        </span>
+                        {/* 
+                        {swap.targetDate && (
+                          <>
+                            <ArrowRight size={12} className="text-zinc-300" />
+                            <span className="px-2 py-0.5 bg-blue-50 text-blue-600 rounded text-[10px] font-black uppercase tracking-widest">
+                              Wanted: {new Date(swap.targetDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                            </span>
+                          </>
+                        )}
+                        */}
                       </div>
-
+                      <h4 className="font-bold text-zinc-900">
+                        {new Date(swap.targetShiftDate).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+                      </h4>
                       {swap.reason && (
-                        <div className="flex items-start gap-2 text-sm text-zinc-600 mb-3">
-                          <MessageSquare size={14} className="mt-0.5 text-zinc-400 flex-shrink-0" />
-                          <span className="italic line-clamp-2">"{swap.reason}"</span>
-                        </div>
+                        <p className="text-xs text-zinc-500 mt-1 font-medium">"{swap.reason}"</p>
                       )}
-
-                      <div className="flex items-center gap-2 text-xs text-zinc-400">
-                        <Clock size={12} />
-                        Posted {new Date(swap.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
-                      </div>
                     </div>
 
                     <button
@@ -363,55 +409,63 @@ export const SwapMarketplace: React.FC<SwapMarketplaceProps> = ({
       )}
 
       {/* Create Swap Modal */}
-      {showCreateModal && (
+      {showForm && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200">
-            <h4 className="text-xl font-bold text-zinc-900 mb-4">Post Swap Request</h4>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-zinc-700 mb-2">Select Your Shift to Swap</label>
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 animate-in fade-in zoom-in duration-200">
+            <h3 className="text-lg font-black text-zinc-900 uppercase tracking-tight mb-6 flex items-center gap-2">
+              <div className="w-1.5 h-6 bg-blue-600 rounded-full" />
+              New Swap Request
+            </h3>
+            <div className="space-y-6">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1">My Shift Date</label>
+                <input
+                  type="date"
+                  value={formData.date}
+                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                  className="w-full bg-zinc-50 border-2 border-zinc-100 text-zinc-900 px-4 py-3 rounded-xl font-bold text-sm outline-none focus:border-zinc-900 focus:bg-white transition-all uppercase tracking-widest"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1">My Shift Type</label>
                 <select
-                  value={selectedShift}
-                  onChange={(e) => setSelectedShift(e.target.value)}
-                  className="w-full px-4 py-3 border border-zinc-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  value={formData.shiftType}
+                  onChange={(e) => setFormData({ ...formData, shiftType: e.target.value })}
+                  className="w-full bg-zinc-50 border-2 border-zinc-100 text-zinc-900 px-4 py-3 rounded-xl font-bold text-sm outline-none focus:border-zinc-900 focus:bg-white transition-all uppercase tracking-widest"
                 >
-                  <option value="">Choose a shift...</option>
-                  {myShifts.map(shift => (
-                    <option key={shift.id} value={shift.id}>
-                      {shift.type} - {new Date(shift.date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
-                    </option>
+                  <option value="">Select type...</option>
+                  {Object.values(ShiftType).map(type => (
+                    <option key={type} value={type}>{type}</option>
                   ))}
                 </select>
               </div>
-
-              <div>
-                <label className="block text-sm font-medium text-zinc-700 mb-2">Reason (Optional)</label>
-                <textarea
-                  value={reason}
-                  onChange={(e) => setReason(e.target.value)}
-                  placeholder="Why do you want to swap this shift?"
-                  rows={3}
-                  className="w-full px-4 py-3 border border-zinc-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1">Target Shift Date (Optional)</label>
+                <input
+                  type="date"
+                  value={formData.targetDate}
+                  onChange={(e) => setFormData({ ...formData, targetDate: e.target.value })}
+                  className="w-full bg-zinc-50 border-2 border-zinc-100 text-zinc-900 px-4 py-3 rounded-xl font-bold text-sm outline-none focus:border-zinc-900 focus:bg-white transition-all uppercase tracking-widest"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1">Reason (Optional)</label>
+                <input
+                  type="text"
+                  value={formData.reason}
+                  onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
+                  placeholder="Why do you need to swap?"
+                  className="w-full bg-zinc-50 border-2 border-zinc-100 text-zinc-900 px-4 py-3 rounded-xl font-bold text-sm outline-none focus:border-zinc-900 focus:bg-white transition-all placeholder:text-zinc-300"
                 />
               </div>
 
-              <div className="flex gap-3 pt-4">
-                <button
-                  onClick={() => {
-                    setShowCreateModal(false);
-                    setSelectedShift('');
-                    setReason('');
-                  }}
-                  className="flex-1 px-4 py-3 border border-zinc-300 rounded-xl text-sm font-semibold text-zinc-700 hover:bg-zinc-50 transition-colors"
-                >
-                  Cancel
-                </button>
+              <div className="pt-2">
                 <button
                   onClick={handleCreateSwap}
-                  className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition-colors"
+                  disabled={loading}
+                  className="w-full py-4 bg-zinc-900 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-black transition-all shadow-xl disabled:bg-zinc-100 disabled:text-zinc-300"
                 >
-                  Post Request
+                  {loading ? 'Posting...' : 'Post Request'}
                 </button>
               </div>
             </div>

@@ -28,6 +28,7 @@ export interface User {
   role: Role;
   isAdmin: boolean; // Determines if user can edit shifts and manage team
   avatar: string;
+  isActive?: boolean;
   preferences: UserPreferences;
 }
 

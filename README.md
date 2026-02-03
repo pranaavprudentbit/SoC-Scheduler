@@ -1,27 +1,38 @@
 # SOCSync - Intelligent Shift Manager
 
-AI-powered shift management system for Security Operations Centers built with Next.js 15, Firebase, and Gemini AI.
+AI-powered shift management system for Security Operations Centers (SOC) built with **Next.js 15**, **Firebase**, and **Gemini AI**.
 
 ## 🚀 Features
 
-- **AI-Powered Scheduling**: Automatic shift generation using Google Gemini AI
-- **Real-time Calendar View**: Visual 7-day schedule overview
-- **Swap Shifts**: Peer-to-peer shift trade system
-- **Activity Logging**: Comprehensive log of all admin and user actions
-- **User Preferences**: Customizable shift preferences and unavailable dates
-- **Admin Dashboard**: Team management and analytics
-- **Role-Based Access**: Admin and Analyst role separation
-- **Firebase Backend**: Secure authentication and real-time database
+### Core Scheduling
+- **AI-Powered Scheduling**: Automatic, fair shift generation using Google Gemini AI, respecting constraints and preferences.
+- **Real-time Calendar View**: Interactive 7-day schedule overview with drag-and-drop capabilities.
+- **Smart Shift Swapping**: Peer-to-peer shift trade system with "Swap Market" for offering/taking shifts.
+- **Shift Recommendations**: AI-driven suggestions for filling gaps based on availability and fairness.
+
+### Team Management
+- **Leave Management**: comprehensive leave request and approval workflow.
+- **Clock In/Out Tracking**: Real-time tracking of shift attendance and actual working hours.
+- **Bulk Availability**: Easy interface for users to mark availability for multiple days or weeks.
+- **Performance Metrics**: Detailed dashboards showing reliability scores, shift completion rates, and swap activity.
+- **User Profiles**: Rich user profiles with role management, avatars, and preference settings.
+
+### Operational Tools
+- **Smart Handover**: Shift notes and broadcast messages to ensure smooth transitions between shifts.
+- **Team Coverage**: Heatmaps and status indicators to visualize staffing levels and potential gaps.
+- **Activity Logging**: Comprehensive immutable log of all admin and user actions for auditability.
+- **Role-Based Access Control**: Strict separation between Admin and Analyst capabilities.
 
 ## 🛠️ Tech Stack
 
 - **Framework**: Next.js 15 (App Router)
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS
-- **Backend**: Firebase (Firestore + Authentication)
+- **Backend / Database**: Firebase (Firestore, Authentication)
+- **AI Engine**: Google Gemini API (via `@google/genai`)
 - **UI Components**: Lucide React (icons)
-- **Charts**: Recharts
-- **AI**: Google Gemini API
+- **Visualization**: Recharts (Analytics & Performance charts)
+- **Linting/Formatting**: ESLint
 
 ## 📦 Quick Start
 
@@ -42,8 +53,8 @@ FIREBASE_PRIVATE_KEY="..."
 GEMINI_API_KEY=...
 ```
 
-Get your Gemini API key from [Google AI Studio](https://makersuite.google.com/app/apikey).
-See `FIREBASE_SETUP.md` for detailed Firestore configuration.
+- Get your Gemini API key from [Google AI Studio](https://makersuite.google.com/app/apikey).
+- See `FIREBASE_SETUP.md` for detailed Firestore configuration.
 
 ### 3. Run Development Server
 
@@ -58,43 +69,46 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 ```
 SOC/
 ├── app/
-│   ├── api/               # API routes (schedule generation)
-│   ├── components/        # React components (AdminPanel, CalendarView, etc.)
-│   ├── login/             # Login page
-│   ├── globals.css        # Global styles
-│   └── page.tsx           # Main dashboard
+│   ├── api/                    # API routes (schedule generation, users, etc.)
+│   ├── components/             # React components
+│   │   ├── AdminPanel.tsx      # Main Admin dashboard
+│   │   ├── CalendarView.tsx    # Shift calendar component
+│   │   ├── ClockInOut.tsx      # Time tracking component
+│   │   ├── LeaveRequestPanel.tsx # Leave management UI
+│   │   ├── PerformanceDashboard.tsx # User stats & metrics
+│   │   ├── ShiftRecommendations.tsx # AI suggestions
+│   │   └── ...
+│   ├── login/                  # Login page
+│   └── page.tsx                # Main application entry
 ├── lib/
-│   ├── firebase/          # Firebase config
-│   └── types.ts           # Type definitions
-├── QUICK_START.md         # Setup guide
-├── FIREBASE_SETUP.md      # Firestore schema info
-└── package.json           # Dependencies
+│   ├── firebase/               # Firebase configuration & admin SDK
+│   ├── types.ts                # TypeScript definitions
+│   └── shiftConfig.ts          # Configuration for shift timings
+├── public/                     # Static assets
+└── ...
 ```
 
 ## 🎯 How It Works
 
-### Authentication
-1. Admin creates user accounts via Firebase Auth.
-2. Login handled by Firebase Auth.
+### Scheduling & AI
+1. **Configuration**: Admin sets shift parameters (staff per day, rest days, etc.).
+2. **Generation**: Admin triggers "Generate Schedule". Gemini AI analyzes constraints, availability, and fairness to propose a roster.
+3. **Adjustment**: Admins can manually drag-and-drop shifts or use **Shift Recommendations** to fill specific slots.
 
-### Schedule Generation
-1. Admin clicks "Generate Schedule" in the Dashboard.
-2. AI generates a fair shift distribution based on preferences and availability.
-3. Shifts are saved to Firestore and the calendar updates automatically.
+### Daily Operations
+- **Clock In/Out**: Analysts use the dashboard to log their start and end times.
+- **Handovers**: Users leaving a shift leave "Shift Notes" for the incoming team.
+- **Swaps**: If a user can't make a shift, they post it to the **Swap Marketplace**. Only eligible peers can accept it.
 
-### Swap Shifts
-1. User posts a request to "Swap Shifts".
-2. Other users can accept the swap.
-3. Ownership transfers immediately upon acceptance.
-
-### Activity Logging
-1. All key actions (e.g., assigning shifts, updating roles, swapping) are logged.
-2. Admins can view the full history in the "Logs" tab of the dashboard.
+### Administration
+- **Leaves**: Users submit leave requests; Admins approve/reject them in the **Leave Request Panel**.
+- **Monitoring**: Admins view **Team Coverage Heatmaps** and **Performance Dashboards** to ensure operational efficiency.
+- **Logs**: Every significant action is recorded in the **Activity Log** for transparency.
 
 ## 🔐 User Roles
 
-- **ADMIN**: Can create users, generate schedules, manage the team, and view activity logs.
-- **ANALYST**: Can view the schedule, swap shifts, and set preferences.
+- **ADMIN**: Full system control. Can generate schedules, manage users, approve leaves, and access all analytics.
+- **ANALYST**: Operational view. Can see schedules, manage their availability, swap shifts, clock in/out, and view their own stats.
 
 ## 📄 License
 

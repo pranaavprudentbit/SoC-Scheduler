@@ -5,6 +5,7 @@ import { User, LeaveRequest } from '@/lib/types';
 import { Calendar, Clock, Check, X, AlertCircle } from 'lucide-react';
 import { db } from '@/lib/firebase/config';
 import { collection, addDoc } from 'firebase/firestore';
+import { useToast } from './ToastProvider';
 
 interface LeaveRequestPanelProps {
   currentUser: User;
@@ -17,6 +18,7 @@ export const LeaveRequestPanel: React.FC<LeaveRequestPanelProps> = ({
   leaveRequests,
   onRefresh
 }) => {
+  const { showToast } = useToast();
   const [isCreating, setIsCreating] = useState(false);
   const [formData, setFormData] = useState({
     date: '',
@@ -42,8 +44,10 @@ export const LeaveRequestPanel: React.FC<LeaveRequestPanelProps> = ({
       setFormData({ date: '', reason: '' });
       setIsCreating(false);
       onRefresh();
+      showToast('Leave request submitted', 'success');
     } catch (error) {
       console.error('Error submitting leave request:', error);
+      showToast('Failed to submit leave request', 'error');
     }
   };
 
@@ -62,11 +66,11 @@ export const LeaveRequestPanel: React.FC<LeaveRequestPanelProps> = ({
 
   return (
     <div className="space-y-6 sm:space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500 pb-12">
-      {/* Tactical Initiation Hub */}
+      {/* Leave Request Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h4 className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.3em] mb-1">Recess Configuration</h4>
-          <p className="text-xs font-bold text-zinc-500 uppercase tracking-tighter">Manage deployment exemption requests</p>
+          <h4 className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.3em] mb-1">Leave Requests</h4>
+          <p className="text-xs font-bold text-zinc-500 uppercase tracking-tighter">Manage your leave requests</p>
         </div>
         <button
           onClick={() => setIsCreating(!isCreating)}
@@ -77,11 +81,11 @@ export const LeaveRequestPanel: React.FC<LeaveRequestPanelProps> = ({
         >
           {isCreating ? (
             <>
-              <X size={14} strokeWidth={3} /> Abort Request
+              <X size={14} strokeWidth={3} /> Cancel
             </>
           ) : (
             <>
-              <Calendar size={14} strokeWidth={3} /> Initiate Exemption
+              <Calendar size={14} strokeWidth={3} /> Request Leave
             </>
           )}
         </button>
@@ -96,12 +100,12 @@ export const LeaveRequestPanel: React.FC<LeaveRequestPanelProps> = ({
           <div className="relative">
             <h3 className="text-xl font-black text-zinc-900 uppercase tracking-tight mb-8 flex items-center gap-3">
               <div className="w-1.5 h-6 bg-blue-600 rounded-full" />
-              New Exemption Protocol
+              New Leave Request
             </h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-3">
-                <label className="block text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] ml-2 font-black">Temporal Selection</label>
+                <label className="block text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] ml-2 font-black">Select Date</label>
                 <input
                   type="date"
                   value={formData.date}
@@ -113,11 +117,11 @@ export const LeaveRequestPanel: React.FC<LeaveRequestPanelProps> = ({
               </div>
 
               <div className="space-y-3">
-                <label className="block text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] ml-2 font-black">Operational Rationale</label>
+                <label className="block text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] ml-2 font-black">Reason for Leave</label>
                 <textarea
                   value={formData.reason}
                   onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
-                  placeholder="Provide detailed justification for deployment recess..."
+                  placeholder="Explain why you need leave..."
                   rows={1}
                   className="w-full bg-zinc-50 border-2 border-zinc-100 text-zinc-900 px-6 py-4 rounded-3xl font-bold outline-none focus:border-blue-600 focus:ring-8 focus:ring-blue-600/5 focus:bg-white transition-all resize-none text-sm leading-relaxed"
                   required
@@ -131,23 +135,23 @@ export const LeaveRequestPanel: React.FC<LeaveRequestPanelProps> = ({
                 onClick={() => setIsCreating(false)}
                 className="px-8 py-4 text-xs font-black text-zinc-400 hover:text-red-600 uppercase tracking-[0.2em] transition-colors"
               >
-                Cancel Entry
+                Cancel
               </button>
               <button
                 type="submit"
                 className="bg-blue-600 hover:bg-blue-700 text-white px-10 py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-lg hover:scale-[1.02] active:scale-95"
               >
-                Transmit Protocol
+                Submit Request
               </button>
             </div>
           </div>
         </form>
       )}
 
-      {/* Exemption Records Chain */}
+      {/* Leave History */}
       <div className="space-y-4">
         <h4 className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.3em] flex items-center gap-3 px-2">
-          Historical Recess Chain ({userRequests.length})
+          My Leave History ({userRequests.length})
         </h4>
 
         {userRequests.length === 0 ? (
@@ -155,8 +159,8 @@ export const LeaveRequestPanel: React.FC<LeaveRequestPanelProps> = ({
             <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-white text-zinc-200 mb-6 shadow-sm">
               <Calendar size={40} />
             </div>
-            <p className="text-xs font-black text-zinc-400 uppercase tracking-[0.3em]">Exemption Log Empty</p>
-            <p className="text-[10px] text-zinc-400 font-bold mt-2 uppercase tracking-tight">Personnel maintaining 100% deployment capability</p>
+            <p className="text-xs font-black text-zinc-400 uppercase tracking-[0.3em]">No leave requests yet</p>
+            <p className="text-[10px] text-zinc-400 font-bold mt-2 uppercase tracking-tight">You haven't requested any leave yet.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4">

@@ -9,7 +9,7 @@ import { AdminPanel } from './components/AdminPanel';
 import { SwapMarketplace } from './components/SwapMarketplace';
 import { PreferencesPanel } from './components/PreferencesPanel';
 import { Calendar, Clock, RefreshCw } from 'lucide-react';
-import { User, Role, Shift, SwapRequest, LeaveRequest, ShiftType } from '@/lib/types';
+import { User, Role, Shift, SwapRequest, LeaveRequest, ShiftType, HOURS_PER_SHIFT } from '@/lib/types';
 import { auth, db } from '@/lib/firebase/config';
 import { onAuthStateChanged } from 'firebase/auth';
 import { collection, getDocs, updateDoc, doc } from 'firebase/firestore';
@@ -67,13 +67,13 @@ export default function Home() {
           return {
             id: doc.id,
             date: data.date,
-            type: data.shift,
+            type: data.type || data.shift,
             userId: data.userId,
             lunchStart: data.lunchStart,
             lunchEnd: data.lunchEnd,
             breakStart: data.breakStart,
             breakEnd: data.breakEnd,
-            manuallyCreated: data.manuallyCreated || false,
+            createdAt: data.createdAt || new Date().toISOString(),
           };
         });
         setShifts(formattedShifts);
@@ -146,6 +146,8 @@ export default function Home() {
     // Update in Firestore
     const userRef = doc(db, 'users', updatedUser.id);
     await updateDoc(userRef, {
+      name: updatedUser.name,
+      avatar: updatedUser.avatar,
       preferredDays: updatedUser.preferences.preferredDays,
       preferredShifts: updatedUser.preferences.preferredShifts,
       unavailableDates: updatedUser.preferences.unavailableDates,
@@ -184,15 +186,15 @@ export default function Home() {
         return {
           id: doc.id,
           date: data.date,
-          type: data.shift,
+          type: data.type || data.shift,
           userId: data.userId,
           lunchStart: data.lunchStart,
           lunchEnd: data.lunchEnd,
-          breakStart: data.breakStart,
-          breakEnd: data.breakEnd,
-          manuallyCreated: data.manuallyCreated || false,
-        };
-      });
+            breakStart: data.breakStart,
+            breakEnd: data.breakEnd,
+            createdAt: data.createdAt || new Date().toISOString(),
+          };
+        });
       setShifts(formattedShifts);
 
       // Refresh swaps
@@ -265,7 +267,7 @@ export default function Home() {
       const d = new Date(s.date);
       return d >= startOfWeek && d < endOfWeek;
     });
-    return weekShifts.length * 8; // Assuming 8 hours per shift
+    return weekShifts.length * HOURS_PER_SHIFT;
   };
 
   const nextShift = getNextShift();
@@ -304,7 +306,7 @@ export default function Home() {
                 </div>
                 {nextShift && (
                   <div className="text-sm text-blue-100 mt-2 font-bold bg-white/10 w-fit px-3 py-1 rounded-full backdrop-blur-sm">
-                    {nextShift.type === ShiftType.NIGHT ? '01:00 AM - 09:00 AM' : nextShift.type === ShiftType.MORNING ? '09:00 AM - 05:00 PM' : '05:00 PM - 01:00 AM'}
+                    {nextShift.type === ShiftType.NIGHT ? '01:00 AM - 10:00 AM (9h)' : nextShift.type === ShiftType.MORNING ? '09:00 AM - 06:00 PM (9h)' : '05:00 PM - 02:00 AM (9h)'}
                   </div>
                 )}
               </div>
@@ -351,17 +353,17 @@ export default function Home() {
               currentDate={scheduleDate}
               onDateChange={handleDateChange}
               userId={currentUser.id}
-              showAll={true}
+              showAll={currentUser.isAdmin}
               showTodayOnly={false}
               hideViewToggle={true}
             />
           </div>
         );
       case 'calendar':
-        return <div className="animate-in fade-in duration-300"><MonthCalendarView shifts={shifts} users={users} /></div>;
+        return <div className="animate-in fade-in duration-300"><MonthCalendarView shifts={shifts} users={users} userId={currentUser.id} isAdmin={currentUser.isAdmin} /></div>;
       case 'admin':
         if (!currentUser.isAdmin) return <div className="text-red-500 mt-10 text-center"><p className="text-xl font-semibold">Access Denied</p><p className="text-sm text-zinc-500 mt-2">Admin privileges required</p></div>;
-        return <div className="animate-in fade-in duration-300"><AdminPanel users={users} shifts={shifts} leaveRequests={leaveRequests} currentUser={currentUser} setShifts={setShifts} onRefresh={refreshData} /></div>;
+        return <div className="animate-in fade-in duration-300"><AdminPanel users={users} shifts={shifts} leaveRequests={leaveRequests} currentUser={currentUser} onRefresh={refreshData} /></div>;
       case 'swaps':
         return <div className="animate-in fade-in duration-300"><SwapMarketplace currentUser={currentUser} users={users} shifts={shifts} onRefresh={refreshData} /></div>;
       case 'preferences':

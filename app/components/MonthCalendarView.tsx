@@ -7,9 +7,11 @@ import { Sun, Sunset, Moon, ChevronLeft, ChevronRight, Activity } from 'lucide-r
 interface MonthCalendarViewProps {
   shifts: Shift[];
   users: User[];
+  userId?: string;
+  isAdmin?: boolean;
 }
 
-export const MonthCalendarView: React.FC<MonthCalendarViewProps> = ({ shifts, users }) => {
+export const MonthCalendarView: React.FC<MonthCalendarViewProps> = ({ shifts, users, userId, isAdmin }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const getLocalDateString = (date: Date) => {
     const y = date.getFullYear();
@@ -74,7 +76,13 @@ export const MonthCalendarView: React.FC<MonthCalendarViewProps> = ({ shifts, us
     setCurrentDate(new Date(year, month + 1, 1));
   };
 
-  const selectedDayShifts = selectedDate ? shifts.filter(s => s.date === selectedDate) : [];
+  // Filter shifts: Admins see everything. Users see their own and partners.
+  const filteredShifts = (userId && !isAdmin) ? shifts.filter(s => {
+    if (s.userId === userId) return true;
+    return shifts.some(os => os.userId === userId && os.date === s.date && os.type === s.type);
+  }) : shifts;
+
+  const selectedDayShifts = selectedDate ? filteredShifts.filter(s => s.date === selectedDate) : [];
 
   return (
     <div className="w-full">
@@ -129,13 +137,13 @@ export const MonthCalendarView: React.FC<MonthCalendarViewProps> = ({ shifts, us
               return (
                 <div
                   key={`empty-${index}`}
-                  className={`min-h-[80px] sm:min-h-[140px] border-b border-r border-zinc-100/50 ${isWeekend ? 'bg-zinc-50/50' : 'bg-transparent'}`}
+                  className={`min-h-[100px] sm:min-h-[160px] border-b border-r border-zinc-100/50 ${isWeekend ? 'bg-zinc-50/50' : 'bg-transparent'}`}
                 />
               );
             }
 
             const dayNum = parseInt(date.split('-')[2], 10);
-            const dayShifts = shifts.filter(s => s.date === date);
+            const dayShifts = filteredShifts.filter(s => s.date === date);
             const isToday = date === today;
             const isSelected = date === selectedDate;
 
@@ -143,7 +151,7 @@ export const MonthCalendarView: React.FC<MonthCalendarViewProps> = ({ shifts, us
               <div
                 key={date}
                 onClick={() => setSelectedDate(date)}
-                className={`min-h-[80px] sm:min-h-[140px] border-b border-r border-zinc-100 p-2 sm:p-4 transition-all group relative flex flex-col cursor-pointer ${isSelected ? 'bg-blue-600/10 ring-2 ring-inset ring-blue-500 z-10' :
+                className={`min-h-[100px] sm:min-h-[160px] border-b border-r border-zinc-100 p-2 sm:p-4 transition-all group relative flex flex-col cursor-pointer ${isSelected ? 'bg-blue-600/10 ring-2 ring-inset ring-blue-500 z-10' :
                   isToday ? 'bg-blue-50/30' : isWeekend ? 'bg-zinc-50/20' : 'bg-white'
                   } hover:bg-zinc-50/80`}
               >
@@ -173,31 +181,45 @@ export const MonthCalendarView: React.FC<MonthCalendarViewProps> = ({ shifts, us
                 </div>
 
                 {/* Day Content - Desktop/Tablet */}
-                <div className="hidden sm:flex flex-col gap-1.5">
-                  {dayShifts
-                    .sort((a, b) => {
-                      const order = { [ShiftType.NIGHT]: 1, [ShiftType.MORNING]: 2, [ShiftType.EVENING]: 3 };
-                      return (order[a.type] || 0) - (order[b.type] || 0);
-                    })
-                    .map(shift => {
-                      const user = users.find(u => u.id === shift.userId);
-                      if (!user) return null;
+                <div className="hidden sm:flex flex-col gap-1">
+                  {[ShiftType.NIGHT, ShiftType.MORNING, ShiftType.EVENING].map(type => {
+                    const typeShifts = dayShifts
+                      .filter(s => s.type === type)
+                      .sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || ''));
+                    if (typeShifts.length === 0) return null;
 
-                      return (
-                        <div
-                          key={shift.id}
-                          className={`text-[9px] px-2 py-1.5 rounded-lg border flex items-center gap-1.5 transition-all hover:scale-[1.02] active:scale-95 shadow-sm ${shift.type === ShiftType.MORNING
-                            ? 'bg-amber-50 border-amber-200 text-amber-900'
-                            : shift.type === ShiftType.EVENING
-                              ? 'bg-blue-50 border-blue-200 text-blue-900'
-                              : 'bg-zinc-900 border-zinc-800 text-white'
-                            }`}
-                        >
-                          <div className="opacity-70">{getShiftIcon(shift.type, 10)}</div>
-                          <span className="truncate font-black tracking-tight">{user.name.split(' ')[0]}</span>
-                        </div>
-                      );
-                    })}
+                    return (
+                      <div key={type} className="flex flex-col gap-0.5">
+                        {typeShifts.map((shift, idx) => {
+                          const user = users.find(u => u.id === shift.userId);
+                          if (!user) return null;
+                          const isCurrentUser = shift.userId === userId;
+                          return (
+                            <div
+                              key={shift.id}
+                              className={`text-[10px] px-2 py-1 rounded border flex items-center gap-1.5 transition-all ${
+                                shift.type === ShiftType.MORNING
+                                ? (isCurrentUser ? 'bg-amber-600 border-amber-500 text-white' : 'bg-amber-50 border-amber-200 text-amber-900')
+                                : shift.type === ShiftType.EVENING
+                                  ? (isCurrentUser ? 'bg-blue-600 border-blue-500 text-white' : 'bg-blue-50 border-blue-200 text-blue-900')
+                                  : (isCurrentUser ? 'bg-zinc-950 border-black text-white' : 'bg-zinc-900 border-zinc-800 text-white')
+                              }`}
+                            >
+                              <div className="flex-shrink-0 opacity-80">
+                                {getShiftIcon(shift.type, 9)}
+                              </div>
+                              <span className="font-black tracking-tight flex-1">
+                                {user.name}
+                              </span>
+                              <span className={`text-[8px] font-black uppercase opacity-60 ${isCurrentUser ? 'text-white' : ''}`}>
+                                {idx === 0 ? "Pri" : idx === 1 ? "Sec" : "Sup"}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })}
                 </div>
 
                 {/* Day Content - Mobile Small Badges */}
@@ -270,7 +292,22 @@ export const MonthCalendarView: React.FC<MonthCalendarViewProps> = ({ shifts, us
                         <img src={user.avatar} className="w-10 h-10 rounded-full border-2 border-white shadow-sm" alt="" />
                         <div className="flex-1 min-w-0">
                           <div className="text-sm font-black text-zinc-900">{user.name}</div>
-                          <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">{user.role}</div>
+                          <div className="flex items-center gap-2">
+                            <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">{user.role}</div>
+                            <div className="w-1 h-1 rounded-full bg-zinc-300" />
+                            <div className={`text-[9px] font-black uppercase tracking-widest ${
+                              shift.type === ShiftType.MORNING ? 'text-amber-600' : shift.type === ShiftType.EVENING ? 'text-blue-600' : 'text-zinc-400'
+                            }`}>
+                              {(() => {
+                                const dayShifts = selectedDayShifts.filter(s => s.type === shift.type).sort((a,b) => (a.createdAt || '').localeCompare(b.createdAt || ''));
+                                const idx = dayShifts.findIndex(s => s.id === shift.id);
+                                const getRoleLabel = (idx: number) => {
+                                  return idx === 0 ? "Pri" : idx === 1 ? "Sec" : "Sup";
+                                };
+                                return getRoleLabel(idx);
+                              })()}
+                            </div>
+                          </div>
                         </div>
                         <div className={`p-2.5 rounded-xl border ${getShiftColor(shift.type)} shadow-sm`}>
                           {getShiftIcon(shift.type, 18)}

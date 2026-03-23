@@ -5,6 +5,7 @@ import { User, UserAvailability } from '@/lib/types';
 import { Calendar, AlertCircle, CheckCircle2, X, Plus } from 'lucide-react';
 import { collection, addDoc, deleteDoc, doc, getDocs, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
+import { useToast } from './ToastProvider';
 
 interface BulkAvailabilityProps {
   currentUser: User;
@@ -12,6 +13,7 @@ interface BulkAvailabilityProps {
 }
 
 export const BulkAvailability: React.FC<BulkAvailabilityProps> = ({ currentUser, onRefresh }) => {
+  const { showToast, confirm } = useToast();
   const [unavailableDates, setUnavailableDates] = useState<UserAvailability[]>([]);
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
@@ -40,7 +42,7 @@ export const BulkAvailability: React.FC<BulkAvailabilityProps> = ({ currentUser,
 
   const handleBlockDates = async () => {
     if (!formData.startDate || !formData.endDate) {
-      alert('Please select both dates');
+      showToast('Please select both dates', 'warning');
       return;
     }
 
@@ -66,6 +68,8 @@ export const BulkAvailability: React.FC<BulkAvailabilityProps> = ({ currentUser,
       setShowModal(false);
       await loadUnavailableDates();
       onRefresh();
+      showToast('Unavailability blocked successfully', 'success');
+      setShowModal(false);
 
       // Log activity
       await import('@/lib/logger').then(m => m.logActivity(
@@ -78,19 +82,26 @@ export const BulkAvailability: React.FC<BulkAvailabilityProps> = ({ currentUser,
 
     } catch (error) {
       console.error('Error blocking dates:', error);
-      alert('Failed to block dates');
+      showToast('Failed to block dates', 'error');
     } finally {
       setLoading(false);
     }
   };
 
   const handleRemoveBlock = async (id: string) => {
-    if (!confirm('Remove this unavailability block?')) return;
-
+    const ok = await confirm({
+      title: 'Remove Unavailability',
+      message: 'Are you sure you want to remove this unavailability block?',
+      confirmLabel: 'Remove',
+      type: 'danger'
+    });
+    
+    if (!ok) return;
     try {
       await deleteDoc(doc(db, 'user_availability', id));
       await loadUnavailableDates();
       onRefresh();
+      showToast('Unavailability removed', 'success');
 
       // Log activity
       await import('@/lib/logger').then(m => m.logActivity(
@@ -123,11 +134,11 @@ export const BulkAvailability: React.FC<BulkAvailabilityProps> = ({ currentUser,
 
   return (
     <div className="space-y-6 sm:space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500 pb-12">
-      {/* Strategic Availability Metrices */}
+      {/* Availability Metrics */}
       <div className="grid grid-cols-2 gap-4">
         {[
-          { label: 'Blocked Days', value: activeBlocksCount, sub: 'Future Blocks', icon: Calendar, color: 'text-indigo-600', bg: 'bg-indigo-50 border-indigo-100' },
-          { label: 'Total Logs', value: unavailableDates.length, sub: 'All Records', icon: AlertCircle, color: 'text-amber-600', bg: 'bg-amber-50 border-amber-100' }
+          { label: 'Days Unavailable', value: activeBlocksCount, sub: 'Future Dates', icon: Calendar, color: 'text-indigo-600', bg: 'bg-indigo-50 border-indigo-100' },
+          { label: 'Total Records', value: unavailableDates.length, sub: 'All Entries', icon: AlertCircle, color: 'text-amber-600', bg: 'bg-amber-50 border-amber-100' }
         ].map((item, idx) => (
           <div key={idx} className={`bg-white border rounded-[2.5rem] p-6 shadow-sm transition-all hover:shadow-md ${item.bg}`}>
             <div className="flex items-center justify-between mb-4">
@@ -142,7 +153,7 @@ export const BulkAvailability: React.FC<BulkAvailabilityProps> = ({ currentUser,
         ))}
       </div>
 
-      {/* Deployment Restriction Initiation */}
+      {/* Add Unavailable Date Button */}
       <button
         onClick={() => setShowModal(true)}
         className="group relative w-full py-6 bg-zinc-900 text-white rounded-[2rem] font-black uppercase tracking-[0.2em] text-xs hover:bg-black transition-all shadow-2xl hover:scale-[1.01] active:scale-95 flex items-center justify-center gap-3 overflow-hidden"
@@ -152,7 +163,7 @@ export const BulkAvailability: React.FC<BulkAvailabilityProps> = ({ currentUser,
         Mark Unavailable Days
       </button>
 
-      {/* Strategic Restriction Generator Modal */}
+      {/* Add Unavailable Dates Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-zinc-900/60 backdrop-blur-md z-[100] flex items-center justify-center p-4 animate-in fade-in duration-300">
           <div className="bg-white rounded-[3rem] shadow-2xl max-w-md w-full p-8 sm:p-10 relative overflow-hidden animate-in zoom-in-95 duration-300">
@@ -163,7 +174,7 @@ export const BulkAvailability: React.FC<BulkAvailabilityProps> = ({ currentUser,
             <div className="relative">
               <h4 className="text-2xl font-black text-zinc-900 tracking-tight mb-8 flex items-center gap-3">
                 <div className="w-1.5 h-6 bg-blue-600 rounded-full" />
-                Block Configuration
+                Add Unavailable Dates
               </h4>
 
               <div className="space-y-6">
@@ -225,13 +236,13 @@ export const BulkAvailability: React.FC<BulkAvailabilityProps> = ({ currentUser,
         </div>
       )}
 
-      {/* Restriction Log Chain */}
+      {/* Unavailable Dates List */}
       <div className="space-y-8">
         {Object.entries(groupedByReason).length === 0 ? (
           <div className="py-24 text-center bg-zinc-50/50 border-2 border-dashed border-zinc-100 rounded-[3rem]">
             <CheckCircle2 className="mx-auto text-emerald-300 mb-6" size={56} />
-            <p className="text-xs font-black text-zinc-400 uppercase tracking-[0.3em]">No restrictions</p>
-            <p className="text-[10px] text-zinc-400 font-bold mt-2 uppercase tracking-tight">Everyone is available</p>
+            <p className="text-xs font-black text-zinc-400 uppercase tracking-[0.3em]">No unavailable dates</p>
+            <p className="text-[10px] text-zinc-400 font-bold mt-2 uppercase tracking-tight">You are currently available for all shifts</p>
           </div>
         ) : (
           Object.entries(groupedByReason).map(([reason, dates]) => (
@@ -241,7 +252,7 @@ export const BulkAvailability: React.FC<BulkAvailabilityProps> = ({ currentUser,
                   <AlertCircle size={16} strokeWidth={3} />
                 </div>
                 <h4 className="text-[10px] font-black text-zinc-900 uppercase tracking-[0.2em]">
-                  {reason.toUpperCase()} <span className="text-zinc-400 ml-2 font-bold">// {dates.length} RECORDS</span>
+                  {reason.toUpperCase()} <span className="text-zinc-400 ml-2 font-bold">// {dates.length} DATES</span>
                 </h4>
                 <div className="flex-1 h-[1px] bg-zinc-100" />
               </div>

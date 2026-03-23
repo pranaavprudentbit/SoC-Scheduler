@@ -106,12 +106,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <LogOut size={18} />
           </button>
 
-          {/* User Avatar */}
-          <div className="flex items-center gap-2 pl-2">
+          {/* User Profile */}
+          <div className="flex items-center gap-3 pl-2 border-l border-zinc-100 ml-1">
+            <div className="hidden sm:flex flex-col items-end leading-none">
+              <span className="text-[11px] font-black text-zinc-900 uppercase tracking-tight">{currentUser.name}</span>
+              <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest">{currentUser.role}</span>
+            </div>
             <img
               src={currentUser.avatar}
               alt={currentUser.name}
-              className="w-8 h-8 sm:w-9 sm:h-9 rounded-full ring-2 ring-blue-50 object-cover"
+              className="w-8 h-8 sm:w-9 sm:h-9 rounded-full ring-2 ring-blue-50 object-cover shadow-sm"
             />
           </div>
         </div>

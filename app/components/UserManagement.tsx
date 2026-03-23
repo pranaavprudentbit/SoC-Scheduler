@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { auth } from '@/lib/firebase/config';
 import { User } from '@/lib/types';
 import { UserPlus, Trash2, Shield, ShieldAlert, User as UserIcon, Loader2, X, ToggleLeft, ToggleRight, CheckCircle2, XCircle } from 'lucide-react';
+import { useToast } from './ToastProvider';
 
 interface UserManagementProps {
   users: User[];
@@ -14,6 +15,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({
   users,
   onRefresh,
 }) => {
+  const { showToast, confirm } = useToast();
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -53,6 +55,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({
       setFormData({ email: '', password: '', name: '', role: 'ANALYST' });
       setShowForm(false);
       onRefresh();
+      showToast(`${formData.name} created successfully`, 'success');
 
       // Log creation
       await import('@/lib/logger').then(m => m.logActivity(
@@ -106,8 +109,10 @@ export const UserManagement: React.FC<UserManagementProps> = ({
         'PROFILE_UPDATE'
       ));
 
+      onRefresh();
+      showToast('User role updated', 'success');
     } catch (err: any) {
-      alert(err.message);
+      showToast(err.message, 'error');
     } finally {
       setActionLoading(null);
     }
@@ -147,15 +152,23 @@ export const UserManagement: React.FC<UserManagementProps> = ({
         'PROFILE_UPDATE'
       ));
 
+      onRefresh();
+      showToast('User status updated', 'success');
     } catch (err: any) {
-      alert(err.message);
+      showToast(err.message, 'error');
     } finally {
       setActionLoading(null);
     }
   };
 
   const handleDeleteUser = async (userId: string, userName: string) => {
-    if (!confirm(`Are you sure you want to PERMANENTLY remove ${userName}? This will delete their account and all their shifts.`)) return;
+    const ok = await confirm({
+      title: 'Delete User',
+      message: `Are you sure you want to PERMANENTLY remove ${userName}? This will delete their account and all their shifts.`,
+      confirmLabel: 'Delete',
+      type: 'danger'
+    });
+    if (!ok) return;
 
     setActionLoading(userId);
     try {
@@ -185,8 +198,10 @@ export const UserManagement: React.FC<UserManagementProps> = ({
         'PROFILE_UPDATE'
       ));
 
+      onRefresh();
+      showToast('User deleted successfully', 'success');
     } catch (err: any) {
-      alert(err.message);
+      showToast(err.message, 'error');
     } finally {
       setActionLoading(null);
     }

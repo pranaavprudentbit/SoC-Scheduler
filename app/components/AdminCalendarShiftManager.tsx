@@ -4,7 +4,8 @@ import React, { useState } from 'react';
 import { User, Shift, ShiftType } from '@/lib/types';
 import { ChevronLeft, ChevronRight, Plus, Edit2, Trash2, Sun, Sunset, Moon, Calendar, Users, CheckCircle2, XCircle } from 'lucide-react';
 import { db, auth } from '@/lib/firebase/config';
-import { collection, addDoc, updateDoc, deleteDoc, doc, query, where, getDocs } from 'firebase/firestore';
+import { useToast } from './ToastProvider';
+import { collection, addDoc, deleteDoc, doc, query, where, getDocs } from 'firebase/firestore';
 
 interface AdminCalendarShiftManagerProps {
   users: User[];
@@ -17,6 +18,7 @@ export const AdminCalendarShiftManager: React.FC<AdminCalendarShiftManagerProps>
   shifts,
   onRefresh
 }) => {
+  const { showToast, confirm } = useToast();
   const [currentWeekStart, setCurrentWeekStart] = useState(() => {
     const today = new Date();
     const day = today.getDay();
@@ -46,81 +48,101 @@ export const AdminCalendarShiftManager: React.FC<AdminCalendarShiftManagerProps>
     setCurrentWeekStart(newDate);
   };
 
-  const getShiftForDateAndType = (date: Date, type: ShiftType): Shift | undefined => {
+  const getShiftsForDateAndType = (date: Date, type: ShiftType): Shift[] => {
     const dateStr = date.toISOString().split('T')[0];
-    return shifts.find(s => s.date === dateStr && s.type === type);
+    return shifts
+      .filter(s => s.date === dateStr && s.type === type)
+      .sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || ''));
   };
 
   const getDefaultBreaks = (type: ShiftType) => {
     switch (type) {
       case ShiftType.MORNING:
-        return { lunchStart: '12:30', lunchEnd: '13:15', breakStart: '15:00', breakEnd: '15:15' };
+        return { lunchStart: '12:00', lunchEnd: '12:45', breakStart: '15:00', breakEnd: '15:15' };
       case ShiftType.EVENING:
-        return { lunchStart: '20:30', lunchEnd: '21:15', breakStart: '23:00', breakEnd: '23:15' };
+        return { lunchStart: '20:00', lunchEnd: '20:45', breakStart: '23:00', breakEnd: '23:15' };
       case ShiftType.NIGHT:
-        return { lunchStart: '04:30', lunchEnd: '05:15', breakStart: '07:00', breakEnd: '07:15' };
+        return { lunchStart: '03:30', lunchEnd: '04:15', breakStart: '07:00', breakEnd: '07:15' };
     }
   };
 
   const handleAssignShift = async (date: Date, type: ShiftType) => {
     if (!selectedUser) {
-      alert("Please select a user from the Members Bank first.");
+      showToast("Please select a user from the Members Bank first.", 'warning');
       return;
     }
 
     const user = users.find(u => u.id === selectedUser);
     if (user?.isActive === false) {
-      alert("Cannot assign an inactive user.");
+      showToast("Cannot assign an inactive user.", 'error');
       return;
     }
 
     const dateStr = date.toISOString().split('T')[0];
-    const existingShift = getShiftForDateAndType(date, type);
+    const existingShifts = getShiftsForDateAndType(date, type);
+    
+    // 1. Check User Preferences (unavailableDates)
+    if (user?.preferences?.unavailableDates?.includes(dateStr)) {
+      showToast(`Cannot assign shift: ${user.name} is unavailable on this date in their preferences.`, 'error');
+      return;
+    }
+
+    // 2. Check for Availability Blocks
+    const availabilityQuery = query(
+      collection(db, 'user_availability'),
+      where('userId', '==', selectedUser),
+      where('date', '==', dateStr)
+    );
+    const availabilitySnapshot = await getDocs(availabilityQuery);
+    if (!availabilitySnapshot.empty) {
+      const blockData = availabilitySnapshot.docs[0].data();
+      if (blockData.available === false) {
+        showToast(`Cannot assign shift: User is unavailable on this date. Reason: ${blockData.reason || 'Blocked'}`, 'error');
+        return;
+      }
+    }
+
+    // 3. Check for Approved Leave Requests
+    const leaveQuery = query(
+      collection(db, 'leave_requests'),
+      where('userId', '==', selectedUser),
+      where('date', '==', dateStr),
+      where('status', '==', 'APPROVED')
+    );
+    const leaveSnapshot = await getDocs(leaveQuery);
+    if (!leaveSnapshot.empty) {
+      const leaveData = leaveSnapshot.docs[0].data();
+      showToast(`Cannot assign shift: ${user?.name} has an approved leave request. Reason: ${leaveData.reason}`, 'error');
+      return;
+    }
+
+    // Limit to 3 people per shift
+    if (existingShifts.length >= 3) {
+      showToast("Maximum of 3 people per shift reached.", 'warning');
+      return;
+    }
 
     const breaks = getDefaultBreaks(type);
 
     try {
-      if (existingShift) {
-        const shiftRef = doc(db, 'shifts', existingShift.id);
-        await updateDoc(shiftRef, {
-          userId: selectedUser,
-          ...breaks,
-          manuallyCreated: true,
-        });
+      await addDoc(collection(db, 'shifts'), {
+        date: dateStr,
+        type: type,
+        userId: selectedUser,
+        ...breaks,
+        createdAt: new Date().toISOString(),
+      });
 
-        // Log update
-        const currentUser = auth.currentUser;
-        if (currentUser) {
-          await import('@/lib/logger').then(m => m.logActivity(
-            currentUser.uid,
-            currentUser.email || 'Admin',
-            'Shift Updated',
-            `Assigned ${type} shift on ${dateStr} to ${user?.name}`,
-            'SHIFT_UPDATE'
-          ));
-        }
-
-      } else {
-        await addDoc(collection(db, 'shifts'), {
-          date: dateStr,
-          shift: type,
-          userId: selectedUser,
-          ...breaks,
-          manuallyCreated: true,
-          createdAt: new Date().toISOString(),
-        });
-
-        // Log creation
-        const currentUser = auth.currentUser;
-        if (currentUser) {
-          await import('@/lib/logger').then(m => m.logActivity(
-            currentUser.uid,
-            currentUser.email || 'Admin',
-            'Shift Assigned',
-            `Created ${type} shift on ${dateStr} for ${user?.name}`,
-            'SHIFT_UPDATE'
-          ));
-        }
+      // Log creation
+      const currentUser = auth.currentUser;
+      if (currentUser) {
+        await import('@/lib/logger').then(m => m.logActivity(
+          currentUser.uid,
+          currentUser.email || 'Admin',
+          'Shift Assigned',
+          `Assigned ${type} shift on ${dateStr} to ${user?.name}`,
+          'SHIFT_UPDATE'
+        ));
       }
       onRefresh();
     } catch (error) {
@@ -147,27 +169,22 @@ export const AdminCalendarShiftManager: React.FC<AdminCalendarShiftManagerProps>
         ));
       }
 
+      showToast("Shift deleted successfully", 'success');
       onRefresh();
     } catch (error) {
       console.error('Error deleting shift:', error);
     }
   };
 
-  const getShiftIcon = (type: ShiftType) => {
+  const getShiftIcon = (type: ShiftType, size: number = 14) => {
     switch (type) {
-      case ShiftType.MORNING: return <Sun className="text-amber-500" size={14} />;
-      case ShiftType.EVENING: return <Sunset className="text-blue-500" size={14} />;
-      case ShiftType.NIGHT: return <Moon className="text-slate-400" size={14} />;
+      case ShiftType.MORNING: return <Sun className="text-amber-500" size={size} />;
+      case ShiftType.EVENING: return <Sunset className="text-blue-500" size={size} />;
+      case ShiftType.NIGHT: return <Moon className="text-slate-400" size={size} />;
     }
   };
 
-  const getShiftColor = (type: ShiftType) => {
-    switch (type) {
-      case ShiftType.MORNING: return 'bg-gradient-to-br from-amber-50 to-orange-50 border-amber-200';
-      case ShiftType.EVENING: return 'bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200';
-      case ShiftType.NIGHT: return 'bg-gradient-to-br from-slate-700 to-slate-800 border-slate-600 text-white';
-    }
-  };
+
 
   const handleDragStart = (e: React.DragEvent, userId: string) => {
     e.dataTransfer.setData('userId', userId);
@@ -177,79 +194,100 @@ export const AdminCalendarShiftManager: React.FC<AdminCalendarShiftManagerProps>
     e.preventDefault();
     const userId = e.dataTransfer.getData('userId');
     if (!userId) return;
+    const user = users.find(u => u.id === userId);
+    if (!user) return;
 
     const dateStr = date.toISOString().split('T')[0];
-    const existingShift = getShiftForDateAndType(date, type);
+    const existingShifts = getShiftsForDateAndType(date, type);
+
+    // Check if user already has this shift
+    if (existingShifts.some(s => s.userId === userId)) {
+      showToast("This user is already assigned to this shift.", 'warning');
+      return;
+    }
+
+    // Check capacity
+    if (existingShifts.length >= 3) {
+      const firstUser = users.find(u => u.id === existingShifts[0].userId);
+      const userName = firstUser ? firstUser.name : 'one user';
+      const confirmReplace = await confirm({
+        title: 'Replace User',
+        message: `Shift is already at capacity (3 people). Replace ${userName} with ${user.name}?`,
+        confirmLabel: 'Replace',
+        type: 'warning'
+      });
+      if (!confirmReplace) return;
+      // If replacing, delete the first one.
+      await deleteDoc(doc(db, 'shifts', existingShifts[0].id));
+      showToast(`Replaced ${userName} with ${user.name}`, 'info');
+    }
 
     // Check for availability blocks
+    // 1. Check User Preferences (unavailableDates)
+    if (user.preferences?.unavailableDates?.includes(dateStr)) {
+      showToast(`Cannot assign shift: ${user.name} is unavailable on this date in their preferences.`, 'error');
+      return;
+    }
+
+    // 2. Check for Availability Blocks
     const availabilityQuery = query(
       collection(db, 'user_availability'),
       where('userId', '==', userId),
       where('date', '==', dateStr)
     );
-
     const availabilitySnapshot = await getDocs(availabilityQuery);
-
     if (!availabilitySnapshot.empty) {
       const blockData = availabilitySnapshot.docs[0].data();
-      alert(`❌ Cannot assign shift: User is unavailable on this date.\nReason: ${blockData.reason || 'Blocked'}`);
+      if (blockData.available === false) {
+        showToast(`Cannot assign shift: User is unavailable on this date. Reason: ${blockData.reason || 'Blocked'}`, 'error');
+        return;
+      }
+    }
+
+    // 3. Check for Approved Leave Requests
+    const leaveQuery = query(
+      collection(db, 'leave_requests'),
+      where('userId', '==', userId),
+      where('date', '==', dateStr),
+      where('status', '==', 'APPROVED')
+    );
+    const leaveSnapshot = await getDocs(leaveQuery);
+    if (!leaveSnapshot.empty) {
+      const leaveData = leaveSnapshot.docs[0].data();
+      showToast(`Cannot assign shift: ${user.name} has an approved leave request. Reason: ${leaveData.reason}`, 'error');
       return;
     }
 
     const breaks = getDefaultBreaks(type);
 
     try {
-      if (existingShift) {
-        const shiftRef = doc(db, 'shifts', existingShift.id);
-        await updateDoc(shiftRef, {
-          userId: userId,
-          ...breaks,
-          manuallyCreated: true,
-        });
+      await addDoc(collection(db, 'shifts'), {
+        date: dateStr,
+        type: type,
+        userId: userId,
+        ...breaks,
+        createdAt: new Date().toISOString(),
+      });
 
-        // Log update
-        const currentUser = auth.currentUser;
-        if (currentUser) {
-          await import('@/lib/logger').then(m => m.logActivity(
-            currentUser.uid,
-            currentUser.email || 'Admin',
-            'Shift Updated (Drag)',
-            `Reassigned ${type} shift on ${dateStr} to ${getUserById(userId)?.name}`,
-            'SHIFT_UPDATE'
-          ));
-        }
-
-      } else {
-        await addDoc(collection(db, 'shifts'), {
-          date: dateStr,
-          shift: type,
-          userId: userId,
-          ...breaks,
-          manuallyCreated: true,
-          createdAt: new Date().toISOString(),
-        });
-
-        // Log creation
-        const currentUser = auth.currentUser;
-        if (currentUser) {
-          await import('@/lib/logger').then(m => m.logActivity(
-            currentUser.uid,
-            currentUser.email || 'Admin',
-            'Shift Assigned (Drag)',
-            `Created ${type} shift on ${dateStr} for ${getUserById(userId)?.name}`,
-            'SHIFT_UPDATE'
-          ));
-        }
+      // Log creation
+      const currentUser = auth.currentUser;
+      if (currentUser) {
+        await import('@/lib/logger').then(m => m.logActivity(
+          currentUser.uid,
+          currentUser.email || 'Admin',
+          'Shift Assigned (Drag)',
+          `Assigned ${type} shift on ${dateStr} to ${getUserById(userId)?.name}`,
+          'SHIFT_UPDATE'
+        ));
       }
       onRefresh();
+      showToast(`Shift assigned successfully to ${getUserById(userId)?.name}`, 'success');
     } catch (error) {
       console.error('Error saving shift via drop:', error);
     }
   };
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-  };
+
 
   const getUserById = (userId: string) => users.find(u => u.id === userId);
 
@@ -307,7 +345,7 @@ export const AdminCalendarShiftManager: React.FC<AdminCalendarShiftManagerProps>
                       <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-2 border-white rounded-full" />
                     </div>
                     <div className="flex flex-col min-w-0">
-                      <span className="text-xs font-black truncate">{user.name}</span>
+                      <span className="text-xs font-black">{user.name}</span>
                       <span className={`text-[8px] font-black uppercase tracking-widest ${isSelected ? 'text-zinc-500' : 'text-zinc-400'}`}>
                         {user.role}
                       </span>
@@ -339,7 +377,7 @@ export const AdminCalendarShiftManager: React.FC<AdminCalendarShiftManagerProps>
                     >
                       <img src={user.avatar} alt="" className="w-10 h-10 rounded-full border-2 border-white shadow-sm" />
                       <div className="flex flex-col min-w-0">
-                        <span className="text-xs font-black text-zinc-400 truncate">{user.name}</span>
+                        <span className="text-xs font-black text-zinc-400">{user.name}</span>
                         <div className="flex items-center gap-1">
                           <XCircle size={8} className="text-zinc-400" />
                           <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest">Inactive</span>
@@ -442,64 +480,107 @@ export const AdminCalendarShiftManager: React.FC<AdminCalendarShiftManagerProps>
 
               {/* Shift Cells */}
               {weekDates.map((date, idx) => {
-                const shift = getShiftForDateAndType(date, shiftType);
-                const user = shift ? getUserById(shift.userId) : null;
+                const cellShifts = getShiftsForDateAndType(date, shiftType);
                 const isToday = date.toDateString() === new Date().toDateString();
 
                 return (
                   <div
                     key={idx}
-                    onDragOver={handleDragOver}
-                    onDrop={(e) => handleDrop(e, date, shiftType)}
-                    className={`p-2 border-l border-zinc-200 min-h-[80px] sm:min-h-[100px] ${isToday ? 'bg-blue-50/30' : ''} transition-colors hover:bg-zinc-50/50`}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      e.currentTarget.classList.add('bg-blue-50', 'border-blue-300');
+                    }}
+                    onDragLeave={(e) => {
+                      e.preventDefault();
+                      e.currentTarget.classList.remove('bg-blue-50', 'border-blue-300');
+                    }}
+                    onDrop={(e) => {
+                      e.currentTarget.classList.remove('bg-blue-50', 'border-blue-300');
+                      handleDrop(e, date, shiftType);
+                    }}
+                    className={`p-2 border-l border-zinc-200 min-h-[80px] sm:min-h-[100px] ${isToday ? 'bg-blue-50/30' : ''} transition-colors hover:bg-zinc-50/50 border-2 border-dashed border-zinc-100`}
                   >
-                    {shift && user ? (
-                      <div className={`h-full rounded-lg border p-2 ${getShiftColor(shiftType)} group relative transition-all hover:shadow-md`}>
-                        <div className="flex flex-col h-full justify-between">
-                          <div className="flex items-start gap-1.5">
-                            <img
-                              src={user.avatar}
-                              alt={user.name}
-                              className="w-6 h-6 sm:w-8 sm:h-8 rounded-full border-2 border-white shadow-sm"
-                            />
-                            <div className="flex-1 min-w-0">
-                              <div className={`text-xs sm:text-sm font-semibold truncate ${shiftType === ShiftType.NIGHT ? 'text-white' : 'text-zinc-900'}`}>
-                                {user.name.split(' ')[0]}
-                              </div>
-                              {shift.manuallyCreated && (
-                                <div className={`text-[10px] font-medium ${shiftType === ShiftType.NIGHT ? 'text-blue-300' : 'text-blue-600'}`}>
-                                  🔒 Protected
+                    <div className="flex flex-col gap-2 h-full">
+                      
+                      <div className="flex flex-col gap-1.5 h-full">
+                        {cellShifts.map((shift, idx) => {
+                          const user = getUserById(shift.userId);
+                          if (!user) return null;
+                          return (
+                            <div 
+                              key={shift.id} 
+                              className={`flex items-center gap-2 p-1.5 rounded-xl border transition-all hover:shadow-md group relative min-w-0 ${
+                                shiftType === ShiftType.NIGHT 
+                                ? 'bg-zinc-900 border-zinc-800 text-white shadow-sm' 
+                                : 'bg-white border-zinc-100 text-zinc-900 shadow-xs'
+                              }`}
+                            >
+                              {/* User Info Section */}
+                              <div className="flex items-center gap-2 flex-1 min-w-0">
+                                <div className="relative flex-shrink-0">
+                                  <img
+                                    src={user.avatar}
+                                    alt={user.name}
+                                    className="w-6 h-6 sm:w-7 sm:h-7 rounded-full border border-white/20 shadow-sm"
+                                  />
+                                  <div className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-white ${user.isActive ? 'bg-emerald-500' : 'bg-zinc-400'}`} />
                                 </div>
-                              )}
-                            </div>
-                          </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className={`text-[11px] font-bold ${
+                                    shiftType === ShiftType.NIGHT ? 'text-white' : 'text-zinc-900'
+                                  }`}>
+                                    {user ? user.name : 'Unknown'}
+                                  </div>
+                                  <div className={`text-[9px] font-black uppercase tracking-tighter leading-none ${
+                                    shiftType === ShiftType.NIGHT ? 'text-blue-400' : 'text-blue-600'
+                                  }`}>
+                                    {idx === 0 ? 'Pri' : idx === 1 ? 'Sec' : 'Sup'}
+                                  </div>
+                                </div>
+                              </div>
 
-                          <div className="flex gap-1 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button
-                              onClick={() => handleAssignShift(date, shiftType)}
-                              className={`p-1 rounded ${shiftType === ShiftType.NIGHT ? 'bg-slate-600 hover:bg-slate-500' : 'bg-white hover:bg-zinc-50'} shadow-sm transition-colors`}
-                              title="Edit"
-                            >
-                              <Edit2 size={12} className={shiftType === ShiftType.NIGHT ? 'text-white' : 'text-blue-600'} />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteShift(shift)}
-                              className={`p-1 rounded ${shiftType === ShiftType.NIGHT ? 'bg-slate-600 hover:bg-slate-500' : 'bg-white hover:bg-zinc-50'} shadow-sm transition-colors`}
-                              title="Delete"
-                            >
-                              <Trash2 size={12} className={shiftType === ShiftType.NIGHT ? 'text-white' : 'text-red-600'} />
-                            </button>
-                          </div>
-                        </div>
+                              {/* Hover Actions */}
+                              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                                <button
+                                  onClick={() => handleAssignShift(date, shiftType)}
+                                  className={`p-1 rounded-md transition-colors ${
+                                    shiftType === ShiftType.NIGHT ? 'hover:bg-white/10 text-white/70' : 'hover:bg-zinc-100 text-zinc-500'
+                                  }`}
+                                  title="Replace"
+                                >
+                                  <Edit2 size={10} />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteShift(shift)}
+                                  className={`p-1 rounded-md transition-colors ${
+                                    shiftType === ShiftType.NIGHT ? 'hover:bg-red-900/40 text-red-300' : 'hover:bg-red-50 text-red-500'
+                                  }`}
+                                  title="Delete"
+                                >
+                                  <Trash2 size={10} />
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+
+                        {cellShifts.length < 3 && (
+                          <button
+                            onClick={() => handleAssignShift(date, shiftType)}
+                            className={`rounded-xl border border-dashed transition-all flex items-center justify-center gap-2 group ${
+                              cellShifts.length === 0 
+                              ? 'h-full w-full py-6 border-zinc-200 bg-zinc-50/50 hover:bg-blue-50/50 hover:border-blue-300' 
+                              : 'py-2 border-zinc-200 bg-zinc-50/30 hover:bg-blue-50 hover:border-blue-200'
+                            }`}
+                          >
+                            <Plus size={cellShifts.length === 0 ? 16 : 12} className="text-zinc-400 group-hover:text-blue-500 group-hover:rotate-90 transition-all duration-300" />
+                            <span className="text-[9px] font-bold text-zinc-400 group-hover:text-blue-500 uppercase tracking-tighter">
+                              {cellShifts.length === 0 ? "Assign Shift" : "Add Support"}
+                            </span>
+                          </button>
+                        )}
                       </div>
-                    ) : (
-                      <button
-                        onClick={() => handleAssignShift(date, shiftType)}
-                        className="w-full h-full rounded-lg border-2 border-dashed border-zinc-200 hover:border-blue-400 hover:bg-blue-50 transition-all flex items-center justify-center group"
-                      >
-                        <Plus size={16} className="text-zinc-400 group-hover:text-blue-600 transition-colors" />
-                      </button>
-                    )}
+                    </div>
                   </div>
                 );
               })}

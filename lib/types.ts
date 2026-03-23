@@ -11,9 +11,9 @@ export enum ShiftType {
 
 // Scheduling constants
 export const SHIFTS_PER_WEEK = 5; // Each user works 5 shifts per week
-export const HOURS_PER_SHIFT = 8; // 8 hours of work per shift (inclusive of breaks)
-export const HOURS_PER_WEEK = 40; // Total: 5 shifts × 8 hours = 40 hours/week
-export const WORKERS_PER_DAY = 3; // Only 3 people work per day (1 Morning, 1 Evening, 1 Night)
+export const HOURS_PER_SHIFT = 9; // 9 hours (8 hours work + 1 hour break)
+export const HOURS_PER_WEEK = 45; // Total: 5 shifts × 9 hours = 45 hours/week
+export const WORKERS_PER_DAY = 3; // Minimum 3 people (1 per shift), can be up to 6
 export const REST_DAYS_PER_WEEK = 2; // Each user gets 2 rest days per week
 
 export interface UserPreferences {
@@ -41,8 +41,8 @@ export interface Shift {
   lunchEnd: string; // HH:mm
   breakStart: string; // HH:mm
   breakEnd: string; // HH:mm
-  manuallyCreated?: boolean; // If true, AI cannot override this shift
   createdBy?: string; // Admin user ID who created it
+  createdAt?: string; // ISO timestamp for stable sorting
 }
 
 export interface SwapRequest {
@@ -141,14 +141,4 @@ export interface Badge {
   description: string;
   icon: string; // emoji or icon name
   earnedDate: string;
-}
-
-// Shift Recommendations
-export interface ShiftRecommendation {
-  shiftId: string;
-  date: string;
-  type: ShiftType;
-  matchScore: number; // 0-100 based on preferences + team need
-  reason: string;
-  urgency: 'LOW' | 'MEDIUM' | 'HIGH'; // How much team needs it
 }

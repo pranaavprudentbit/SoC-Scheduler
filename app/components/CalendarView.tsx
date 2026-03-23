@@ -1,6 +1,6 @@
 'use client';
 
-import { Sun, Sunset, Moon, Calendar, CalendarDays, ChevronLeft, ChevronRight, CalendarRange } from 'lucide-react';
+import { Sun, Sunset, Moon, Clock, Calendar, CalendarDays, ChevronLeft, ChevronRight, CalendarRange } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Shift, User, ShiftType } from '@/lib/types';
 
@@ -52,8 +52,13 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Filter logic: Show all if showAll is true, otherwise filter by userId if provided
-  const filteredShifts = showAll ? shifts : (userId ? shifts.filter(s => s.userId === userId) : shifts);
+  // Filter logic: Show all if showAll is true
+  // If filtering by userId, also include partners in the same shift slot (same date and type)
+  const filteredShifts = showAll ? shifts : (userId ? shifts.filter(s => {
+    if (s.userId === userId) return true;
+    // Check if the current user has a shift in the same slot
+    return shifts.some(os => os.userId === userId && os.date === s.date && os.type === s.type);
+  }) : shifts);
 
   // Calculate dates based on view mode
   const getDates = () => {
@@ -110,23 +115,48 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   };
 
 
-  const getShiftIcon = (type: ShiftType) => {
+  const getShiftIcon = (type: ShiftType, size: number = 14) => {
     switch (type) {
       case ShiftType.MORNING:
-        return <Sun className="text-amber-600" size={14} />;
+        return <Sun className="text-amber-600" size={size} />;
       case ShiftType.EVENING:
-        return <Sunset className="text-blue-600" size={14} />;
+        return <Sunset className="text-blue-600" size={size} />;
       case ShiftType.NIGHT:
-        return <Moon className="text-blue-200" size={14} />;
+        return <Moon className="text-blue-200" size={size} />;
     }
   };
 
   const getShiftTime = (type: ShiftType) => {
     switch (type) {
-      case ShiftType.MORNING: return '09:00 AM - 05:00 PM';
-      case ShiftType.EVENING: return '05:00 PM - 01:00 AM';
-      case ShiftType.NIGHT: return '01:00 AM - 09:00 AM';
+      case ShiftType.MORNING: return '09:00 AM - 06:00 PM (9h)';
+      case ShiftType.EVENING: return '05:00 PM - 02:00 AM (9h)';
+      case ShiftType.NIGHT: return '01:00 AM - 10:00 AM (9h)';
     }
+  };
+
+  const isShiftActive = (type: ShiftType, date: string) => {
+    const shiftStart = new Date(date);
+    const shiftEnd = new Date(date);
+    const currentTime = now.getTime();
+
+    // Set exact timings based on our 9-hour logic
+    if (type === ShiftType.NIGHT) {
+      shiftStart.setHours(1, 0, 0, 0);
+      shiftEnd.setHours(10, 0, 0, 0);
+    } else if (type === ShiftType.MORNING) {
+      shiftStart.setHours(9, 0, 0, 0);
+      shiftEnd.setHours(18, 0, 0, 0);
+    } else if (type === ShiftType.EVENING) {
+      shiftStart.setHours(17, 0, 0, 0);
+      shiftEnd.setDate(shiftEnd.getDate() + 1); // Ends next day
+      shiftEnd.setHours(2, 0, 0, 0);
+    }
+
+    return currentTime >= shiftStart.getTime() && currentTime < shiftEnd.getTime();
+  };
+  
+  const getWeeklyHours = () => {
+    return (userId ? shifts.filter(s => s.userId === userId).length : shifts.length) * 9;
   };
 
   return (
@@ -135,11 +165,19 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
         <div className="flex flex-col items-center gap-4 sm:gap-6 text-center">
           <div>
             <h2 className="text-2xl sm:text-3xl font-black text-zinc-900 tracking-tight">
-              {showTodayOnly ? "Live Shifts" : (userId ? 'Personal Timeline' : 'Fleet Operations')}
+              {showTodayOnly ? "Current Shifts" : (userId ? 'My Schedule' : 'Team Schedule')}
             </h2>
             <p className="text-zinc-500 text-sm font-medium mt-1 uppercase tracking-wider">
-              {showTodayOnly ? "Currently active duty" : "Weekly strategic deployment"}
+              {showTodayOnly ? "Currently working" : "Weekly Schedule"}
             </p>
+            {userId && !showTodayOnly && (
+              <div className="mt-3 inline-flex items-center gap-2 px-3 py-1 bg-blue-50 border border-blue-100 rounded-full">
+                <Clock size={12} className="text-blue-600" />
+                <span className="text-[10px] font-black text-blue-700 uppercase tracking-wider">
+                  Total Weekly Hours: {getWeeklyHours()}
+                </span>
+              </div>
+            )}
           </div>
 
           {!showTodayOnly && (
@@ -228,77 +266,87 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                   } ${isCurrentSelection ? 'border-zinc-300 shadow-md ring-2 ring-zinc-100' : ''}`}
               >
                 {/* Header */}
-                <div className="text-center mb-4 pb-2 border-b border-zinc-50">
                   <div className={`text-[10px] font-black uppercase tracking-widest mb-0.5 ${isToday ? 'text-blue-600' : 'text-zinc-400'}`}>
                     {dayName}
                   </div>
                   <div className={`text-4xl font-black ${isToday ? 'text-blue-600' : 'text-zinc-900'}`}>
                     {dayNum}
                   </div>
-                </div>
 
                 {/* Shift Stack */}
                 <div className="space-y-1.5 flex-1">
                   {[ShiftType.NIGHT, ShiftType.MORNING, ShiftType.EVENING].map(type => {
-                    const shift = dayShifts.find(s => s.type === type);
-                    const isCurrentUser = shift?.userId === userId;
-
-                    // Check if this specific shift is currently active (LIVE)
-                    const isShiftActive = () => {
-                      const shiftStart = new Date(date);
-                      const shiftEnd = new Date(date);
-                      const currentTime = now.getTime();
-
-                      // Set exact timings based on our 8-hour logic
-                      if (type === ShiftType.NIGHT) {
-                        shiftStart.setHours(1, 0, 0, 0);
-                        shiftEnd.setHours(9, 0, 0, 0);
-                      } else if (type === ShiftType.MORNING) {
-                        shiftStart.setHours(9, 0, 0, 0);
-                        shiftEnd.setHours(17, 0, 0, 0);
-                      } else if (type === ShiftType.EVENING) {
-                        shiftStart.setHours(17, 0, 0, 0);
-                        shiftEnd.setDate(shiftEnd.getDate() + 1); // Ends next day
-                        shiftEnd.setHours(1, 0, 0, 0);
-                      }
-
-                      return currentTime >= shiftStart.getTime() && currentTime < shiftEnd.getTime();
-                    };
-
-                    const isLive = isShiftActive();
+                    const currentSlotShifts = dayShifts
+                      .filter(s => s.type === type)
+                      .sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || ''));
+                    const isLive = isShiftActive(type, date);
 
                     return (
-                      <div
-                        key={type}
-                        className={`flex flex-col p-2 rounded-2xl transition-all relative overflow-hidden ${shift
-                          ? isLive
-                            ? 'bg-white border-2 border-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.15)] z-20 scale-[1.02]'
-                            : isCurrentUser
-                              ? 'bg-blue-600 text-white shadow-md ring-2 ring-blue-500 ring-offset-1'
-                              : 'bg-zinc-50 border border-zinc-100 text-zinc-600'
-                          : 'bg-transparent border border-dashed border-zinc-100 opacity-20'
-                          }`}
-                      >
-                        <div className="flex items-center justify-between mb-0.5">
-                          <div className={`${isCurrentUser && !isLive ? 'text-white' : isLive ? 'text-emerald-600' : 'text-zinc-400'}`}>
-                            {getShiftIcon(type)}
-                          </div>
+                      <div key={type} className="flex flex-col gap-1.5 w-full">
+                        {currentSlotShifts.length > 0 ? (
+                          currentSlotShifts.map((shift, idx) => {
+                            const isCurrentUser = shift.userId === userId;
+                            const shiftUser = users.find(u => u.id === shift.userId);
+                            return (
+                              <div
+                                key={shift.id}
+                                className={`flex items-center gap-2 p-1.5 rounded-xl border transition-all relative min-w-0 ${
+                                  isLive
+                                  ? 'bg-white border-2 border-emerald-500 shadow-md z-20 scale-[1.02]'
+                                  : isCurrentUser
+                                    ? 'bg-blue-600 border-blue-500 text-white shadow-sm ring-1 ring-blue-400/50'
+                                    : 'bg-white border-zinc-100 text-zinc-600 shadow-xs'
+                                }`}
+                              >
+                                {/* Shift Status Indicator */}
+                                <div className={`flex-shrink-0 w-1 self-stretch rounded-full ${
+                                  isLive ? 'bg-emerald-500' : isCurrentUser ? 'bg-white/30' : 'bg-zinc-200'
+                                }`} />
 
-                          <div className="flex items-center gap-1.5">
-                            {isLive && shift && (
-                              <span className="relative flex h-1.5 w-1.5">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
-                              </span>
-                            )}
-                            <span className={`text-[7px] font-black uppercase tracking-tighter ${isLive ? 'text-emerald-600' : 'opacity-70'}`}>
-                              {isLive ? 'LIVE' : ''}
-                            </span>
+                                <div className="flex items-center gap-2 flex-1 min-w-0">
+                                  <div className="relative flex-shrink-0">
+                                    <div className={`${isCurrentUser && !isLive ? 'text-white' : isLive ? 'text-emerald-600' : 'text-zinc-400'}`}>
+                                      {getShiftIcon(type, 12)}
+                                    </div>
+                                  </div>
+
+                                  <div className="flex-1 min-w-0 flex flex-col items-start leading-tight gap-1">
+                                    <div className={`text-[12px] font-bold ${isCurrentUser && !isLive ? 'text-white' : 'text-zinc-900'} break-words w-full`}>
+                                      {shiftUser ? shiftUser.name : 'Unknown'}
+                                    </div>
+                                    <div className="flex flex-wrap items-center gap-1.5 w-full">
+                                      <div className={`text-[10px] font-black uppercase tracking-tighter shrink-0 ${
+                                        idx === 0 
+                                        ? (isCurrentUser && !isLive ? 'text-blue-100' : 'text-blue-600')
+                                        : (isCurrentUser && !isLive ? 'text-white/60' : 'text-zinc-400')
+                                      }`}>
+                                        {idx === 0 ? "Pri" : idx === 1 ? "Sec" : "Sup"}
+                                      </div>
+                                      
+                                      {isCurrentUser && (
+                                        <span className={`text-[9px] font-bold uppercase tracking-tight shrink-0 ${isLive ? 'text-emerald-500' : 'text-white/70'}`}>
+                                          (Me)
+                                        </span>
+                                      )}
+
+                                      {isLive && (
+                                        <div className="flex items-center gap-1 bg-emerald-50 px-1.5 py-0.5 rounded-md border border-emerald-100 shrink-0">
+                                          <div className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
+                                          <span className="text-[8px] font-black text-emerald-600 uppercase">Live</span>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })
+                        ) : (
+                          <div className="py-2 px-3 rounded-xl border border-dashed border-zinc-100 flex items-center gap-2 opacity-40">
+                            {getShiftIcon(type, 10)}
+                            <span className="text-[10px] font-medium uppercase tracking-wider">Unassigned</span>
                           </div>
-                        </div>
-                        <div className={`text-[9px] font-black truncate uppercase tracking-tighter ${isLive ? 'text-zinc-900' : ''}`}>
-                          {shift ? (isCurrentUser ? "ME" : users.find(u => u.id === shift.userId)?.name.split(' ')[0]) : "OFF"}
-                        </div>
+                        )}
                       </div>
                     );
                   })}

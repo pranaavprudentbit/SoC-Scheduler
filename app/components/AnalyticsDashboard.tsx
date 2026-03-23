@@ -71,8 +71,8 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ users, s
       });
     }
 
-    // Find gaps
-    const gaps = coverageData.filter(d => d.total < 3);
+    // Find gaps (at least one shift type has 0 people)
+    const gaps = coverageData.filter(d => d.morning === 0 || d.evening === 0 || d.night === 0);
 
     // Burnout risk - users with many consecutive shifts
     const burnoutRisk = userWorkload.filter(u => u.totalShifts > 6 || u.nightShifts > 3);
@@ -87,7 +87,6 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ users, s
       coverageData,
       gaps,
       burnoutRisk,
-      protectedShifts: shifts.filter(s => s.manuallyCreated).length,
     };
   }, [users, shifts]);
 
@@ -97,9 +96,11 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ users, s
     return 'bg-emerald-500';
   };
 
-  const getCoverageColor = (total: number) => {
+  const getCoverageColor = (morning: number, evening: number, night: number) => {
+    const total = morning + evening + night;
     if (total === 0) return 'bg-red-100 text-red-700 border-red-300';
-    if (total < 3) return 'bg-amber-100 text-amber-700 border-amber-300';
+    if (morning === 0 || evening === 0 || night === 0) return 'bg-amber-100 text-amber-700 border-amber-300';
+    if (morning < 3 || evening < 3 || night < 3) return 'bg-blue-50 text-blue-700 border-blue-200';
     return 'bg-emerald-100 text-emerald-700 border-emerald-300';
   };
 
@@ -177,14 +178,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ users, s
           <div className="text-xs text-zinc-500 mt-1">Future shifts</div>
         </div>
 
-        <div className="bg-white border border-zinc-200 rounded-xl p-5">
-          <div className="flex items-center gap-3 mb-2">
-            <span className="text-lg">🔒</span>
-            <span className="text-xs font-semibold text-zinc-500 uppercase">Protected</span>
-          </div>
-          <div className="text-3xl font-black text-indigo-600">{analytics.protectedShifts}</div>
-          <div className="text-xs text-zinc-500 mt-1">Manual shifts</div>
-        </div>
+
       </div>
 
       {/* Shift Type Distribution */}
@@ -250,7 +244,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ users, s
         <div className="grid grid-cols-7 gap-2">
           {analytics.coverageData.map((day, idx) => (
             <div key={idx} className="text-center">
-              <div className={`rounded-lg border p-3 ${getCoverageColor(day.total)}`}>
+              <div className={`rounded-lg border p-3 ${getCoverageColor(day.morning, day.evening, day.night)}`}>
                 <div className="text-xs font-semibold mb-1">{day.day}</div>
                 <div className="text-2xl font-black mb-2">{day.dayNum}</div>
                 <div className="space-y-1">
@@ -271,18 +265,22 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ users, s
             </div>
           ))}
         </div>
-        <div className="flex items-center justify-center gap-4 mt-4 text-xs">
+        <div className="flex flex-wrap items-center justify-center gap-4 mt-4 text-xs font-semibold">
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 rounded bg-emerald-100 border border-emerald-300"></div>
-            <span className="text-zinc-600">Full Coverage (3/3)</span>
+            <span className="text-zinc-600">Full Coverage (3/3 per shift)</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded bg-blue-50 border border-blue-200"></div>
+            <span className="text-zinc-600">Good Coverage (1-2/3 per shift)</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 rounded bg-amber-100 border border-amber-300"></div>
-            <span className="text-zinc-600">Partial (1-2/3)</span>
+            <span className="text-zinc-600">Gap (Missing a shift)</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 rounded bg-red-100 border border-red-300"></div>
-            <span className="text-zinc-600">No Coverage (0/3)</span>
+            <span className="text-zinc-600">No Coverage</span>
           </div>
         </div>
       </div>

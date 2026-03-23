@@ -5,6 +5,7 @@ import { User, Shift, SwapRequest, ShiftType } from '@/lib/types';
 import { RefreshCw, Plus, X, Check, Calendar, Clock, MessageSquare, ArrowRightLeft } from 'lucide-react';
 import { db } from '@/lib/firebase/config';
 import { collection, addDoc, updateDoc, doc, getDocs, deleteDoc, query } from 'firebase/firestore';
+import { useToast } from './ToastProvider';
 
 interface SwapMarketplaceProps {
   currentUser: User;
@@ -19,6 +20,7 @@ export const SwapMarketplace: React.FC<SwapMarketplaceProps> = ({
   shifts,
   onRefresh
 }) => {
+  const { showToast, confirm } = useToast();
   const [swapRequests, setSwapRequests] = useState<SwapRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -52,7 +54,7 @@ export const SwapMarketplace: React.FC<SwapMarketplaceProps> = ({
 
   const handleCreateSwap = async () => {
     if (!formData.date || !formData.shiftType) {
-      alert('Please select a date and shift type');
+      showToast('Please select a date and shift type', 'warning');
       return;
     }
 
@@ -65,7 +67,7 @@ export const SwapMarketplace: React.FC<SwapMarketplaceProps> = ({
       );
 
       if (!shift) {
-        alert('You do not have a shift on this date/time to swap.');
+        showToast('You do not have a shift on this date/time to swap.', 'error');
         return;
       }
 
@@ -94,13 +96,20 @@ export const SwapMarketplace: React.FC<SwapMarketplaceProps> = ({
       setShowForm(false);
       setFormData({ date: '', shiftType: '', targetDate: '', reason: '' });
       fetchSwapRequests();
+      showToast('Swap request posted successfully', 'success');
     } catch (error) {
       console.error('Error creating swap request:', error);
     }
   };
 
   const handleAcceptSwap = async (swapRequest: SwapRequest) => {
-    if (!confirm('Accept this swap? You will take over their shift.')) return;
+    const ok = await confirm({
+      title: 'Accept Swap',
+      message: 'Accept this swap? You will take over their shift.',
+      confirmLabel: 'Accept',
+      type: 'info'
+    });
+    if (!ok) return;
 
     try {
       const targetShift = shifts.find(s => s.id === swapRequest.targetShiftId);
@@ -140,7 +149,13 @@ export const SwapMarketplace: React.FC<SwapMarketplaceProps> = ({
   };
 
   const handleCancelSwap = async (swapId: string) => {
-    if (!confirm('Cancel this swap request?')) return;
+    const ok = await confirm({
+      title: 'Cancel Swap',
+      message: 'Cancel this swap request?',
+      confirmLabel: 'Cancel Swap',
+      type: 'warning'
+    });
+    if (!ok) return;
 
     try {
       await deleteDoc(doc(db, 'swap_requests', swapId));

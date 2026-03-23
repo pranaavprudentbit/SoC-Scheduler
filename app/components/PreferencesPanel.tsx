@@ -2,13 +2,12 @@
 
 import React, { useState } from 'react';
 import { Save, Clock, Calendar, Plus, Moon, Sun, Sunset, User as UserIcon, BarChart2, History, FileText } from 'lucide-react';
-import { db } from '@/lib/firebase/config';
-import { doc, updateDoc } from 'firebase/firestore';
 import { User, Shift, SwapRequest, LeaveRequest, ShiftType } from '@/lib/types';
 import { ShiftHistory } from './ShiftHistory';
 import { PerformanceDashboard } from './PerformanceDashboard';
 import { BulkAvailability } from './BulkAvailability';
 import { LeaveRequestPanel } from './LeaveRequestPanel';
+import { useToast } from './ToastProvider';
 
 interface PreferencesPanelProps {
   currentUser: User;
@@ -29,11 +28,19 @@ export const PreferencesPanel: React.FC<PreferencesPanelProps> = ({
   onUpdate,
   onRefresh
 }) => {
+  const { showToast } = useToast();
   const [activeSubTab, setActiveSubTab] = useState<'profile' | 'history' | 'performance' | 'availability' | 'leaves'>('profile');
   const [prefs, setPrefs] = useState(currentUser.preferences);
   const [name, setName] = useState(currentUser.name);
   const [avatar, setAvatar] = useState(currentUser.avatar);
   const [loading, setLoading] = useState(false);
+
+  // Sync state when currentUser prop changes (essential for fixing the "frozen" UI bug)
+  React.useEffect(() => {
+    setPrefs(currentUser.preferences);
+    setName(currentUser.name);
+    setAvatar(currentUser.avatar);
+  }, [currentUser]);
 
   const toggleShiftType = (type: ShiftType) => {
     const current = prefs.preferredShifts;
@@ -46,15 +53,9 @@ export const PreferencesPanel: React.FC<PreferencesPanelProps> = ({
   const handleSave = async () => {
     setLoading(true);
     try {
-      const userRef = doc(db, 'users', currentUser.id);
-      await updateDoc(userRef, {
-        name,
-        avatar,
-        preferredDays: prefs.preferredDays,
-        preferredShifts: prefs.preferredShifts,
-        updatedAt: new Date().toISOString()
-      });
-
+      // Logic: Persistence is now handled by the parent's onUpdate to ensure consistency
+      // across all fields (name, avatar, and preferences).
+      
       const { logActivity } = await import('@/lib/logger');
       await logActivity(
         currentUser.id,
@@ -65,6 +66,7 @@ export const PreferencesPanel: React.FC<PreferencesPanelProps> = ({
       );
 
       onUpdate({ ...currentUser, name, avatar, preferences: prefs });
+      showToast('Profile updated successfully', 'success');
     } catch (error: any) {
       console.error('Failed to update preferences', error);
     } finally {
@@ -82,9 +84,9 @@ export const PreferencesPanel: React.FC<PreferencesPanelProps> = ({
 
   const getShiftTime = (type: ShiftType) => {
     switch (type) {
-      case ShiftType.NIGHT: return '01:00 AM - 09:00 AM';
-      case ShiftType.MORNING: return '09:00 AM - 05:00 PM';
-      case ShiftType.EVENING: return '05:00 PM - 01:00 AM';
+      case ShiftType.NIGHT: return '01:00 AM - 10:00 AM';
+      case ShiftType.MORNING: return '09:00 AM - 06:00 PM';
+      case ShiftType.EVENING: return '05:00 PM - 02:00 AM';
     }
   };
 
@@ -114,7 +116,7 @@ export const PreferencesPanel: React.FC<PreferencesPanelProps> = ({
             disabled={loading}
             className={`bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-2xl text-sm font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-200 w-full sm:w-auto ${loading ? 'opacity-50 cursor-not-allowed' : 'active:scale-95'}`}
           >
-            <Save size={16} /> {loading ? 'Syncing...' : 'Update Profile'}
+            <Save size={16} /> {loading ? 'Saving...' : 'Save Changes'}
           </button>
         )}
       </div>
@@ -155,14 +157,14 @@ export const PreferencesPanel: React.FC<PreferencesPanelProps> = ({
                   <UserIcon size={20} />
                 </div>
                 <div>
-                  <h3 className="text-lg font-black text-zinc-900 uppercase tracking-tight">Identity Details</h3>
-                  <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Personal Identification</p>
+                  <h3 className="text-lg font-black text-zinc-900 uppercase tracking-tight">Account Information</h3>
+                  <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Update your profile details</p>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">Fleet Callsign</label>
+                  <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">Full Name</label>
                   <input
                     type="text"
                     value={name}
@@ -225,8 +227,8 @@ export const PreferencesPanel: React.FC<PreferencesPanelProps> = ({
                   <Clock size={20} />
                 </div>
                 <div>
-                  <h3 className="text-lg font-black text-zinc-900 uppercase tracking-tight">Shift Priorities</h3>
-                  <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Tactical Routing Bias</p>
+                  <h3 className="text-lg font-black text-zinc-900 uppercase tracking-tight">Shift Preferences</h3>
+                  <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Set your preferred shifts</p>
                 </div>
               </div>
 

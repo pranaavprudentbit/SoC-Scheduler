@@ -5,6 +5,7 @@ import { Shift, ClockEntry, User } from '@/lib/types';
 import { Play, Square, AlertCircle } from 'lucide-react';
 import { collection, addDoc, getDocs, query, where, updateDoc, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
+import { useToast } from './ToastProvider';
 
 interface ClockInOutProps {
   shifts: Shift[];
@@ -13,6 +14,7 @@ interface ClockInOutProps {
 }
 
 export const ClockInOut: React.FC<ClockInOutProps> = ({ shifts, currentUser, upcomingShift }) => {
+  const { showToast } = useToast();
   const [clockEntries, setClockEntries] = useState<ClockEntry[]>([]);
   const [isClockedIn, setIsClockedIn] = useState(false);
   const [clockInTime, setClockInTime] = useState<string | null>(null);
@@ -56,7 +58,7 @@ export const ClockInOut: React.FC<ClockInOutProps> = ({ shifts, currentUser, upc
       if (entry.actualHours) totalHours += entry.actualHours;
     });
 
-    const overtime = Math.max(0, totalHours - 40);
+    const overtime = Math.max(0, totalHours - 45);
 
     setWeekStats({
       hours: Math.round(totalHours * 10) / 10,
@@ -67,7 +69,7 @@ export const ClockInOut: React.FC<ClockInOutProps> = ({ shifts, currentUser, upc
 
   const handleClockIn = async () => {
     if (!upcomingShift) {
-      alert('No upcoming shift found');
+      showToast('No upcoming shift found', 'warning');
       return;
     }
 
@@ -84,9 +86,10 @@ export const ClockInOut: React.FC<ClockInOutProps> = ({ shifts, currentUser, upc
       setIsClockedIn(true);
       setClockInTime(clockInTimeStr);
       await loadClockEntries();
+      showToast('Clocked in successfully', 'success');
     } catch (error) {
       console.error('Error clocking in:', error);
-      alert('Failed to clock in');
+      showToast('Failed to clock in', 'error');
     } finally {
       setLoading(false);
     }
@@ -112,9 +115,10 @@ export const ClockInOut: React.FC<ClockInOutProps> = ({ shifts, currentUser, upc
       setClockInTime(null);
       await loadClockEntries();
       calculateWeekStats();
+      showToast('Clocked out successfully', 'success');
     } catch (error) {
       console.error('Error clocking out:', error);
-      alert('Failed to clock out');
+      showToast('Failed to clock out', 'error');
     } finally {
       setLoading(false);
     }

@@ -38,7 +38,7 @@ export const ShiftHistory: React.FC<ShiftHistoryProps> = ({ shifts, currentUser 
   // Calculate stats
   const stats = useMemo(() => {
     const totalShifts = userShifts.length;
-    const totalHours = totalShifts * 8; // 8 hours per shift
+    const totalHours = totalShifts * 9; // 9 hours per shift (span)
     const nightCount = userShifts.filter(s => s.type === ShiftType.NIGHT).length;
     const morningCount = userShifts.filter(s => s.type === ShiftType.MORNING).length;
     const eveningCount = userShifts.filter(s => s.type === ShiftType.EVENING).length;
@@ -145,7 +145,7 @@ export const ShiftHistory: React.FC<ShiftHistoryProps> = ({ shifts, currentUser 
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="font-black text-xs text-zinc-900 uppercase tracking-tight">{shift.type}</span>
-                    {shift.manuallyCreated && <span className="text-[7px] bg-blue-600 text-white px-1.5 py-0.5 rounded-full font-black uppercase">Admin</span>}
+  
                   </div>
                   <div className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest mt-0.5">
                     {new Date(shift.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', weekday: 'short' })}
@@ -154,7 +154,7 @@ export const ShiftHistory: React.FC<ShiftHistoryProps> = ({ shifts, currentUser 
               </div>
 
               <div className="text-right">
-                <div className="text-[10px] font-black text-zinc-900 uppercase tracking-tighter">8.0 HRS</div>
+                <div className="text-[10px] font-black text-zinc-900 uppercase tracking-tighter">9.0 HRS</div>
                 <div className="text-[8px] font-bold text-zinc-400 uppercase tracking-widest mt-0.5">Duty Cycle</div>
               </div>
             </div>
